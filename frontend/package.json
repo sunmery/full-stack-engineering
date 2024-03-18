@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,cjs,mjs,.md}": "ESLINT_USE_FLAT_CONFIG=false eslint -c .eslintrc.yml **/*.{ts,tsx,md} --fix",
+    "*.{ts,tsx,js,jsx,cjs,mjs,md}": "eslint --fix",
     "*.{css,scss,sass}": "stylelint --fix",
     "*.{ts,tsx,js,jsx,cjs,mjs}": "prettier --write"
   },
