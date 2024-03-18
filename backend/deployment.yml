@@ -1,0 +1,52 @@
+# 命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: docker.io/library/tiktok-user
+          ports:
+            - containerPort: 30001
+            - containerPort: 30002
+          volumeMounts:
+            - name: config-volume
+              mountPath: /data/conf
+          command: ["/app/<appname>", "-conf", "/data/conf"]
+      volumes:
+        - name: config-volume
+          hostPath:
+            path: /path/to/configs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 30001
+      targetPort: 30001
+      nodePort: 30001
+    - protocol: TCP
+      port: 30002
+      targetPort: 30002
+      nodePort: 30002
+  type: NodePort

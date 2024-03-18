@@ -1,0 +1,55 @@
+# Source: https://docs.gitlab.com/ee/ci/yaml/index.html
+
+stages:
+  - deploy
+  - go_push
+
+variables:
+  PROJECT_PATH: "/home/kubernetes/web"
+  PROJECT_NAME: web
+  RUNNER_HARBOR_TAG: "did2" # 给特定的tag的runner执行
+  IMAGE_TAG: "v1.0.0" # 版本号
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
+
+# 构建Docker镜像并推送到Harbor
+go_push:
+  stage: go_push
+  tags:
+    - ${RUNNER_HARBOR_TAG}
+  image: docker:24.0.5 # 指定为宿主机的Docker镜像版本，但实际上不会下载
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker info # 验证 Docker 是否正常工作
+    - docker version
+  script:
+    # - mkdir -p /etc/docker/certs.d/192.168.2.152:30003
+    # - mv /ca.crt /etc/docker/certs.d/192.168.2.152:30003
+    - docker login -u $HARBOR_USERNAME -p $HARBOR_PASSWORD $HARBOR_ADDRESS
+    - docker build -t $IMAGE_TAG -f Dockerfile .
+    - docker tag $IMAGE_TAG $HARBOR_ADDRESS/$HARBOR_REPO/$PROJECT_NAME_SERVER:$IMAGE_TAG
+    - docker push $HARBOR_ADDRESS/$HARBOR_REPO/$PROJECT_NAME_SERVER:$IMAGE_TAG
+  only:
+    - main
+
+cache:
+  key: ${WEB_PROJECT_NAME}
+  paths:
+    - node_modules
+    - dist
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  tags:
+    - ${RUNNER_HARBOR_TAG}
+  script:
+    #    - sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+    - sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+    #    - apk update
+    - apk add sshpass
+    - apk add openssh-client
+    - export SSHPASS=root
+    - sshpass -e scp -o stricthostkeychecking=no ./argo.sh root@192.168.2.160:${PROJECT_PATH}
+    - sshpass -e ssh -o stricthostkeychecking=no root@192.168.2.160 'sh ${PROJECT_PATH}/argo.sh'

@@ -1,0 +1,56 @@
+# Source: https://docs.gitlab.com/ee/ci/yaml/index.html
+
+stages:
+  - deploy
+  - web_build
+
+variables:
+  PROJECT_PATH: '/home/kubernetes/microservice-shop'
+  PROJECT_NAME_SERVER: microservice-shop
+  PROJECT_NAME_CLIENT: microservice-shop-web
+  RUNNER_WEB_TAG: 'node' # 给特定的tag的runner执行
+  RUNNER_HARBOR_TAG: 'did2' # 给特定的tag的runner执行
+  RUNNER_SHELL_TAG: 'shell' # 给特定的tag的runner执行
+  IMAGE_TAG: 'v1.0.0' # 版本号
+  DOCKER_TLS_CERTDIR: ''
+  DOCKER_HOST: tcp://docker:2375
+
+cache:
+  key: ${WEB_PROJECT_NAME}
+  paths:
+    - node_modules
+    - dist
+
+web_build:
+  stage: web_build
+  image: node:18-alpine3.19
+  tags:
+    - ${RUNNER_WEB_TAG}
+  script:
+    - node -v
+    - npm install pnpm -g
+    - cd ./web && pnpm install
+    - pnpm build
+  only:
+    - main
+  artifacts:
+    paths:
+      - web/dist/
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  tags:
+    - ${RUNNER_HARBOR_TAG}
+  script:
+    #    - sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+    - sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g'
+      /etc/apk/repositories
+    #    - apk update
+    - apk add sshpass
+    - apk add openssh-client
+    - export SSHPASS=root
+    - sshpass -e scp -o stricthostkeychecking=no ./argo.sh
+      root@192.168.2.160:${PROJECT_PATH}
+    - sshpass -e ssh -o stricthostkeychecking=no root@192.168.2.160 'sh
+      ${PROJECT_PATH}/argo.sh'
