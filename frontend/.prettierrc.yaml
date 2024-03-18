@@ -34,7 +34,7 @@ tabWidth: 2
 # 多属性换行
 singleAttributePerLine: true
 # 是否使用tab进行缩进，而不是使用空格
-# useTabs: false
+useTabs: true
 # 打印结尾分号
 trailingComma: all
 # import 导入顺序

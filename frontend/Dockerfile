@@ -44,9 +44,5 @@ COPY --from=builder /web/dist/ /usr/share/nginx/html/
 # /usr/share/nginx/html/是 nginx 的 html 目录, 必须保留
 VOLUME ["/var/cache/nginx/", "/etc/nginx/ssl/", "/etc/nginx/conf/", "/etc/nginx/conf/nginx.conf", "/var/log/nginx/", "/usr/share/nginx/html/"]
 
-# 映射的端口
-EXPOSE 80
-EXPOSE 443
-
 # 运行 nginx 服务
 CMD ["nginx", "-g", "daemon off;"]

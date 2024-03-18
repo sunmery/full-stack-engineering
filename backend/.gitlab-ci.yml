@@ -2,21 +2,27 @@
 
 stages:
   - deploy
-  - go_push
+  - backend_push
 
 variables:
-  PROJECT_PATH: "/home/kubernetes/web"
-  PROJECT_NAME: web
-  RUNNER_HARBOR_TAG: "did2" # 给特定的tag的runner执行
+  # 远程服务器存放Argo代码执行文件的目录
+  PROJECT_PATH: "/home/kubernetes/backend"
+  # 项目名称
+  PROJECT_NAME: backend
+  # 你创建Gitlab Runner时的tag
+  RUNNER_REGISTER_TAG: "did2" # 给特定的tag的runner执行
+  # 镜像版本号
   IMAGE_TAG: "v1.0.0" # 版本号
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
+  # 如果远程注册表不是HTTPS, 就填写
+  # DOCKER_TLS_CERTDIR: ""
+  # 如果Gitlab Runner是Docker安装的, 除非你知道在做什么, 否则不要修改
+  #DOCKER_HOST: tcp://docker:2375
 
-# 构建Docker镜像并推送到Harbor
-go_push:
-  stage: go_push
+# 构建Docker镜像并推送到镜像注册表
+backend_push:
+  stage: backend_push
   tags:
-    - ${RUNNER_HARBOR_TAG}
+    - ${RUNNER_REGISTER_TAG}
   image: docker:24.0.5 # 指定为宿主机的Docker镜像版本，但实际上不会下载
   services:
     - docker:24.0.5-dind
@@ -26,10 +32,12 @@ go_push:
   script:
     # - mkdir -p /etc/docker/certs.d/192.168.2.152:30003
     # - mv /ca.crt /etc/docker/certs.d/192.168.2.152:30003
-    - docker login -u $HARBOR_USERNAME -p $HARBOR_PASSWORD $HARBOR_ADDRESS
+    - docker login -u $REGISTER_USERNAME -p $REGISTER_PASSWORD $REGISTER_ADDRESS
     - docker build -t $IMAGE_TAG -f Dockerfile .
-    - docker tag $IMAGE_TAG $HARBOR_ADDRESS/$HARBOR_REPO/$PROJECT_NAME_SERVER:$IMAGE_TAG
-    - docker push $HARBOR_ADDRESS/$HARBOR_REPO/$PROJECT_NAME_SERVER:$IMAGE_TAG
+    - docker tag $IMAGE_TAG $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$IMAGE_TAG
+    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$IMAGE_TAG
+
+  # 只触发CI的分支
   only:
     - main
 
@@ -43,13 +51,14 @@ deploy:
   stage: deploy
   image: alpine:latest
   tags:
-    - ${RUNNER_HARBOR_TAG}
+    - ${RUNNER_REGISTER_TAG}
   script:
+    # 服务器如有需要, 可换成国内大陆的源
     #    - sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
     - sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
     #    - apk update
     - apk add sshpass
     - apk add openssh-client
-    - export SSHPASS=root
+    #- export SSHPASS=root
     - sshpass -e scp -o stricthostkeychecking=no ./argo.sh root@192.168.2.160:${PROJECT_PATH}
     - sshpass -e ssh -o stricthostkeychecking=no root@192.168.2.160 'sh ${PROJECT_PATH}/argo.sh'
