@@ -16,4 +16,11 @@ parserOptions:
   sourceType: module
 plugins:
   - react
-rules: {prettier/prettier: error}
+  - prettier
+rules:
+  prettier/prettier: error
+
+settings:
+  react:
+    pragma: 'React'
+    version: 'detect'
