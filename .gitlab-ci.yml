@@ -68,7 +68,7 @@ cache:
 
 job_frontend_test:
   stage: test
-  image: golang:1.22.2-alpine3.19
+  image: node:18-alpine
   tags:
     - node
   before_script:
