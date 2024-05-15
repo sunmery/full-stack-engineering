@@ -2,6 +2,7 @@ stages:
   - init
   - test
   - build
+  - manifests
   - deploy
   - verify
 
@@ -111,6 +112,13 @@ job_backend_build:
   stage: build
   extends:
     - .docker_login_template
+  before_script:
+    - |
+      if [ -n "$TAG_VERSION" ]; then
+       echo "当前Pipeline基于的Git Tag版本号为: $TAG_VERSION"
+      else
+      echo "本次Pipeline不是由Git Tag触发，没有Tag版本号。"
+      fi
   script:
     - >
       docker build
@@ -127,6 +135,9 @@ job_backend_build:
   only:
     - main
     - dev
+    # 确保这个job在没有Tag时也能运行
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
 job_create_argo_proj:
   stage: init
@@ -150,6 +161,36 @@ job_create_argo_proj:
   only:
     variables:
       - $BACKEND_INIT == "true"
+
+job_manifests:
+  stage: manifests
+  image: ccr.ccs.tencentyun.com/lisa/alpine:git
+  before_script:
+    - which ssh-agent || apk update && apk add openssh-client
+    - mkdir -p /root/.ssh
+    - echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_ed25519
+    - chmod 600 /root/.ssh/id_ed25519
+    - ssh-keyscan -H gitlab.com >> ~/.ssh/known_hosts || true
+    - chmod 644 ~/.ssh/known_hosts
+    # run ssh-agent
+    - eval $(ssh-agent -s)
+    # add ssh key stored in SSH_PRIVATE_KEY variable to the agent store
+    - ssh-add /root/.ssh/id_ed25519
+    # Git
+    - git config --global user.email "gitlab-ci@gmail.com"
+    - git config --global user.name "gitlab-ci"
+    - git clone git@gitlab.com:lookeke/manifests.git
+    - cd manifests
+    - ls -latr
+  script:
+    # Update Image TAG
+    - sed -i "s/image:.*/image:${TAG_VERSION}/g" full-stack-engineering/backend/deployment.yml
+    - git add full-stack-engineering/backend/deployment.yml
+    - git commit -am "Update Image"
+    - git push
+  only:
+    - dev
+    - main
 
 job_deploy:
   stage: deploy

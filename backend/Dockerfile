@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 # https://docs.docker.com/go/dockerfile-reference/
 
+# 版本号
+ARG VERSION=latest
 # 定义基础镜像的 Golang 版本
 ARG GO_IMAGE=golang:1.22.2-alpine3.19
 # 构建的目标平台
@@ -28,14 +30,15 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 #RUN VERSION=$(git describe --tags --always)
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=$CGO_ENABLED GOOS=$GOOS GOARCH=$ARCH go build -o /bin/ ./...
+    CGO_ENABLED=$CGO_ENABLED GOOS=$GOOS GOARCH=$ARCH \
+    go build -ldflags="-X main.Version=${VERSION}" -o /bin/ ./...
 
 FROM alpine:latest AS final
 # 用户进程ID
 ARG UID=10001
 # 后端程序的gRPC端口(如果有), 例如30001
 ARG PORT1=30001
-# 后端程序的HTTP端口(如果有),, 例如30002
+# 后端程序的HTTP端口(如果有), 例如30002
 ARG PORT1=30002
 
 # 修改镜像源为中国科技大学的镜像源
