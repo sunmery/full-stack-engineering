@@ -132,10 +132,6 @@ job_backend_build:
     - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
   after_script:
     - docker images
-  only:
-    - main
-    - dev
-    # 确保这个job在没有Tag时也能运行
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
@@ -168,7 +164,7 @@ job_manifests:
   before_script:
     - which ssh-agent || apk update && apk add openssh-client
     - mkdir -p /root/.ssh
-    - echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_ed25519
+    - echo $SSH_PRIVATE_KEY > /root/.ssh/id_ed25519
     - chmod 600 /root/.ssh/id_ed25519
     - ssh-keyscan -H gitlab.com >> ~/.ssh/known_hosts || true
     - chmod 644 ~/.ssh/known_hosts
@@ -177,8 +173,8 @@ job_manifests:
     # add ssh key stored in SSH_PRIVATE_KEY variable to the agent store
     - ssh-add /root/.ssh/id_ed25519
     # Git
-    - git config --global user.email "gitlab-ci@gmail.com"
-    - git config --global user.name "gitlab-ci"
+    - git config --global user.email gitlab-ci@gmail.com
+    - git config --global user.name gitlab-ci
     - git clone git@gitlab.com:lookeke/manifests.git
     - cd manifests
     - ls -latr
