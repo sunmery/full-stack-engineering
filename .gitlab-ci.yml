@@ -118,7 +118,7 @@ job_backend_build:
     - docker version
     - docker login -u $REGISTER_USERNAME -p $REGISTER_PASSWORD $REGISTER_ADDRESS
   script:
-    - >
+    - |
       docker build \
       -t $IMAGE_TAG:$VERSION \
       -f backend/Dockerfile backend \
