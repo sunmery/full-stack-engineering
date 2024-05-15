@@ -34,6 +34,7 @@ variables:
   BACKEND_PROJECT_AUTHORS: lisa
   # 服务端项目名称
   BACKEND_PROJECT_NAME: backend
+  BACKEND_IMAGE_URL: ${REGISTER_ADDRESS}/${BACKEND_PROJECT_AUTHORS}/BACKEND_PROJECT_NAME
   # 版本号, 例如v1.0.0, latest, 这里使用了git tag <VERSION> 作为版本号, CI_COMMIT_TAG是gitlab ci内置命令
   BACKEND_VERSION: ${CI_COMMIT_TAG}
   # HTTP端口
@@ -94,6 +95,9 @@ cache:
 #  only:
 #    - main
 #    - dev
+#  rules:
+#    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+#      when: always
 
 #job_backend_test:
 #  stage: test
@@ -112,6 +116,9 @@ cache:
 #      fi
 #  only:
 #    - main
+#  rules:
+#   - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+#     when: always
 
 job_backend_build:
   stage: build
@@ -149,7 +156,10 @@ job_backend_build:
     - docker tag $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
     - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+      when: always
+  #rules:
+  #  - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
 job_create_argo_proj:
   stage: init
@@ -196,13 +206,26 @@ job_manifests:
     - cd manifests
     - ls -latr
   script:
-    - sed -i "s/image:.*/image:${BACKEND_VERSION}/g" full-stack-engineering/backend/deployment.yml
+    - echo CI_MERGE_REQUEST_SOURCE_BRANCH_NAME $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    - echo CI_MERGE_REQUEST_TARGET_BRANCH_NAME $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    - echo CI_DEFAULT_BRANCH $CI_DEFAULT_BRANCH
+    - |
+      if [ -z "${BACKEND_VERSION}" ]; then
+        echo "BACKEND_VERSION 为空"
+        sed -i "s/image:.*/image: ${REGISTER_ADDRESS}\/${BACKEND_PROJECT_AUTHORS}\/${BACKEND_PROJECT_NAME}:dev/g" full-stack-engineering/backend/deployment.yml
+      else
+        echo "使用BACKEND_VERSION: ${BACKEND_VERSION}"
+        sed -i "s/image:.*/image: ${REGISTER_ADDRESS}\/${BACKEND_PROJECT_AUTHORS}\/${BACKEND_PROJECT_NAME}:${BACKEND_VERSION}/g" full-stack-engineering/backend/deployment.yml
+      fi
     - git add full-stack-engineering/backend/deployment.yml
     - git commit -am "Update Image"
     - git push
-  only:
-    - dev
-    - main
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+      when: always
+#  only:
+#    - dev
+#    - main
 
 job_deploy:
   stage: deploy
@@ -223,9 +246,12 @@ job_deploy:
       rm -rf /tmp/application-frontend.yml;
       rm -rf /tmp/application-backend.yml
       '
-  only:
-    - main
-    - dev
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+      when: always
+#  only:
+#    - main
+#    - dev
 
 job_verify:
   stage: verify
