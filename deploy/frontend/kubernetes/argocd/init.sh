@@ -19,16 +19,16 @@ export CLUSTER_SERVER="https://192.168.2.160:6443"
 # 仓库URL
 export BRANCH="main"
 # 仓库地址
-export PROJECT_GIT_URL="https://gitlab.com/lookeke/full-stack-engineering.git"
-
+#export PROJECT_GIT_URL="https://gitlab.com/lookeke/full-stack-engineering.git"
+export PROJECT_GIT_URL="https://gitlab.com/lookeke/manifests.git"
+# Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
+export FRONTEND_DEPLOY_PATH="full-stack-engineering/frontend"
 # 前端命名空间, 不需要额外创建命名空间选择default即可
 export FRONTEND_NAMESPACE="frontend"
 # argocd中的前端项目名, 用于分配团队人员的操作权限
 export FRONTEND_PROJECT_NAME="frontend"
 # 前端应用的名称
 export FRONTEND_APPLICATION_NAME="react"
-# Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
-export FRONTEND_DEPLOY_PATH="https://gitlab.com/lookeke/manifests/-/blob/main/full-stack-engineering/frontend"
 
 # 获取Git Repo URL
 if [ -z "$BRANCH" ]; then
