@@ -114,8 +114,8 @@ job_backend_test:
         echo "测试失败
         exit 1
       fi
-  only:
-    - main
+  #  only:
+  #    - main
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
       when: always
