@@ -112,15 +112,11 @@ job_frontend_build:
 
 job_backend_build:
   stage: build
-  variables:
-    FF_NETWORK_PER_BUILD: "true"
-  tags:
-    #    - ${DOCKER_RUNNER_TAG}
-    - did2
-  image: docker:dind
+  #  variables:
+  #    FF_NETWORK_PER_BUILD: "true"
+  image: docker:26.1.0-dind-alpine3.19
   services:
-    #- docker:26.1.0-dind-alpine3.19
-    - docker:dind
+    - docker:26.1.0-dind-alpine3.19
   before_script:
     #    - docker info # 验证 Docker 是否正常工作
     #    - docker version
