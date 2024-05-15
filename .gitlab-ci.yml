@@ -99,26 +99,26 @@ cache:
 #    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
 #      when: always
 
-#job_backend_test:
-#  stage: test
-#  image: golang:1.22.2-alpine3.19
-#  tags:
-#    - ${BACKEND_TAG}
-#  before_script:
-#    - cd backend
-#  script:
-#    - go test ./...
-#  after_script:
-#    - |
-#      if [ $? -ne 0 ]; then
-#        echo "测试失败
-#        exit 1
-#      fi
-#  only:
-#    - main
-#  rules:
-#   - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
-#     when: always
+job_backend_test:
+  stage: test
+  image: golang:1.22.2-alpine3.19
+  tags:
+    - ${BACKEND_TAG}
+  before_script:
+    - cd backend
+  script:
+    - go test ./...
+  after_script:
+    - |
+      if [ $? -ne 0 ]; then
+        echo "测试失败
+        exit 1
+      fi
+  only:
+    - main
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+      when: always
 
 job_backend_build:
   stage: build
