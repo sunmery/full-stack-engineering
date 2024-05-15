@@ -3,6 +3,13 @@
 
 # 定义基础镜像的 Golang 版本
 ARG GO_IMAGE=golang:1.22.2-alpine3.19
+# 构建的目标平台
+ARG GOOS=linux
+# 构建的目标架构
+ARG ARCH=amd64
+# Go的环境变量, 例如alpine镜像不内置gcc,则关闭CGO很有效
+ARG CGO_ENABLED=0
+
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
 WORKDIR /src
 
@@ -18,14 +25,18 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     go mod download -x
 
 # 获取代码版本号，用于编译时标记二进制文件
-ARG ARCH=amd64
-ARG CGO_ENABLED=0
 #RUN VERSION=$(git describe --tags --always)
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
-    CGO_ENABLED=$CGO_ENABLED GOARCH=$ARCH go build -o /bin/ ./...
+    CGO_ENABLED=$CGO_ENABLED GOOS=$GOOS GOARCH=$ARCH go build -o /bin/ ./...
 
 FROM alpine:latest AS final
+# 用户进程ID
+ARG UID=10001
+# 后端程序的gRPC端口(如果有), 例如30001
+ARG PORT1=30001
+# 后端程序的HTTP端口(如果有),, 例如30002
+ARG PORT1=30002
 
 # 修改镜像源为中国科技大学的镜像源
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
@@ -35,7 +46,6 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositorie
 #    apk --update add ca-certificates tzdata && update-ca-certificates
 
 # 创建一个非特权用户来运行应用，增强容器安全性
-ARG UID=10001
 RUN adduser --disabled-password --gecos "" --home "/nonexistent" --shell "/sbin/nologin" --no-create-home --uid "${UID}" appuser
 
 # 设置时区为上海
@@ -48,7 +58,8 @@ USER appuser
 COPY --from=build /bin/backend /bin/
 
 # 指定容器对外暴露的端口号
-EXPOSE 30001
+EXPOSE $PORT1
+EXPOSE $PORT2
 
 # 设置容器启动时执行的命令
 ENTRYPOINT ["/bin/backend", "-conf", "/data/conf"]
