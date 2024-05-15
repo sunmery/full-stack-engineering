@@ -112,8 +112,8 @@ job_frontend_build:
 
 job_backend_build:
   stage: build
-  #  variables:
-  #    FF_NETWORK_PER_BUILD: "true"
+  variables:
+    FF_NETWORK_PER_BUILD: "true"
   image: docker:26.1.0-dind-alpine3.19
   services:
     - docker:26.1.0-dind-alpine3.19
