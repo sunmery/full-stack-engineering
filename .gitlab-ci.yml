@@ -74,27 +74,27 @@ cache:
       --password ${ARGO_PASS}
       --insecure
 
-#job_frontend_test:
-#  stage: test
-#  image: node:18-alpine
-#  tags:
-#    - ${FRONTEND_TAG}
-#  before_script:
-#    - cd frontend
-#    - npm install -g pnpm
-#    - rm -rf node_modules
-#  script:
-#    - pnpm i
-#    - pnpm lint
-#  after_script:
-#    - |
-#      if [ $? -ne 0 ]; then
-#        echo "测试失败
-#        exit 1
-#      fi
-#  rules:
-#    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
-#      when: always
+  #job_frontend_test:
+  #  stage: test
+  #  image: node:18-alpine
+  #  tags:
+  #    - ${FRONTEND_TAG}
+  #  before_script:
+  #    - cd frontend
+  #    - npm install -g pnpm
+  #    - rm -rf node_modules
+  #  script:
+  #    - pnpm i
+  #    - pnpm lint
+  #  after_script:
+  #    - |
+  #      if [ $? -ne 0 ]; then
+  #        echo "测试失败
+  #        exit 1
+  #      fi
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
 
 job_backend_test:
   stage: test
@@ -114,7 +114,7 @@ job_backend_test:
   #  only:
   #    - main
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
 job_backend_build:
@@ -151,7 +151,7 @@ job_backend_build:
     - docker tag $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
     - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
 job_create_argo_proj:
@@ -210,7 +210,7 @@ job_manifests:
     - git commit -am "Update Image"
     - git push
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
 job_deploy:
@@ -233,7 +233,7 @@ job_deploy:
       rm -rf /tmp/application-backend.yml
       '
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
 job_verify:
@@ -246,5 +246,5 @@ job_verify:
     - curl -L http://${s_host1}:30001/helloworld/lisa
     - curl -L http://${s_host1}:30002/helloworld/lisa
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+.[0-9]+.[0-9]+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
