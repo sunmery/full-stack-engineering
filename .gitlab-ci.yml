@@ -128,6 +128,7 @@ job_backend_build:
     - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
   only:
     - main
+    - dev
 
 #job_deploy:
 #  stage: deploy
@@ -183,3 +184,4 @@ job_verify:
     - curl -L http://${s_host1}
   only:
     - main
+    - dev
