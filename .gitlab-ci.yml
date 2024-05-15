@@ -76,6 +76,7 @@ job_frontend_test:
     - npm install -g pnpm
     - rm -rf node_modules
   script:
+    - pnpm i
     - pnpm lint
   after_script:
     - |
@@ -135,12 +136,12 @@ job_create_argo_proj:
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       argocd proj create -f /tmp/create-frontend-proj.yml
-      argocd proj create -f /tmp/create-backend-proj.yml
+      ;argocd proj create -f /tmp/create-backend-proj.yml
       '
   after_script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       rm -rf /tmp/create-frontend-proj.yml
-      rm -rf /tmp/create-backend-proj.yml
+      ;rm -rf /tmp/create-backend-proj.yml
       '
   only:
     variables:
@@ -157,12 +158,12 @@ job_deploy:
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       argocd app create -f /tmp/application-frontend.yml
-      argocd app create -f /tmp/application-backend.yml
+      ;argocd app create -f /tmp/application-backend.yml
       '
   after_script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       rm -rf /tmp/application-frontend.yml
-      rm -rf /tmp/application-backend.yml
+      ;rm -rf /tmp/application-backend.yml
       '
   only:
     - main
