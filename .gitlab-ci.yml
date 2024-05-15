@@ -134,8 +134,8 @@ job_create_argo_proj:
     - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-proj.yml ${s_user}@${s_host1}:/tmp/
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd create -f /tmp/create-frontend-proj.yml
-      argocd create -f /tmp/create-backend-proj.yml
+      argocd proj create -f /tmp/create-frontend-proj.yml
+      argocd proj create -f /tmp/create-backend-proj.yml
       '
   after_script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
