@@ -21,7 +21,7 @@ variables:
   # 如果远程注册表不是HTTPS, 就填写
   # DOCKER_TLS_CERTDIR: ""
   # 如果Gitlab Runner是Docker安装的, 除非你知道在做什么, 否则不要修改
-  DOCKER_HOST: tcp://docker:2375
+  #  DOCKER_HOST: tcp://docker:2375
   PROJECT_NAME_CLIENT: "frontend"
   PROJECT_NAME_SERVER: "backend"
 cache:
@@ -122,8 +122,8 @@ job_backend_build:
     #- docker:26.1.0-dind-alpine3.19
     - docker:dind
   before_script:
-    - docker info # 验证 Docker 是否正常工作
-    - docker version
+    #    - docker info # 验证 Docker 是否正常工作
+    #    - docker version
     - docker login  $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
   script:
     - docker build -t $IMAGE_TAG:$VERSION -f backend/Dockerfile .
