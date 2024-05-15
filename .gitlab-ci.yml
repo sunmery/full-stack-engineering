@@ -128,17 +128,17 @@ job_backend_build:
     - echo "正在登录到远程注册表"
     - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
     - |
-      if [ -n "$TAG_VERSION" ]; then
-        echo "Git Tag版本号为: $TAG_VERSION"
+      if [ -n "$BACKEND_VERSION" ]; then
+        echo "Git Tag版本号为: $BACKEND_VERSION"
       else
         echo "没有设置Tag版本号, 默认设置为 dev"
-        export TAG_VERSION="dev"
+        export BACKEND_VERSION="dev"
       fi
-    - echo $TAG_VERSION
+    - echo $BACKEND_VERSION
   script:
     - >
       docker build
-      -t $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION
+      -t $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
       -f ${BACKEND_PROJECT_NAME}/Dockerfile ${BACKEND_PROJECT_NAME}
       --build-arg GO_IMAGE=${GO_IMAGE}
       --build-arg ARCH=${ARCH}
@@ -146,8 +146,8 @@ job_backend_build:
       --build-arg UID=${UID}
       --build-arg PORT1=${PORT1}
       --build-arg PORT2=${PORT2}
-    - docker tag $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION
-    - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION
+    - docker tag $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
+    - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
@@ -196,7 +196,7 @@ job_manifests:
     - cd manifests
     - ls -latr
   script:
-    - sed -i "s/image:.*/image:${TAG_VERSION}/g" full-stack-engineering/backend/deployment.yml
+    - sed -i "s/image:.*/image:${BACKEND_VERSION}/g" full-stack-engineering/backend/deployment.yml
     - git add full-stack-engineering/backend/deployment.yml
     - git commit -am "Update Image"
     - git push
