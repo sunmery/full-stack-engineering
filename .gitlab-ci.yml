@@ -1,0 +1,188 @@
+stages:
+  #  - test
+  - build
+  #  - first_run
+  #  - deploy
+  - verify
+
+variables:
+  # 是否为第一次运行, 包含拉取和构建运行Web应用的镜像
+  FIRST: "true"
+  # Web目录, 在远程服务器存在的目录
+  NGINX_DIR: /home/nginx
+  # 项目名称
+  PROJECT_NAME: backend
+  # 版本号
+  VERSION: "v1.0.0"
+  IMAGE_TAG: "backend"
+  FRONTEND_RUNNER: "node"
+  BACKEND_RUNNER: "go"
+  DOCKER_RUNNER_TAG: "docker" # 给特定的tag的runner执行
+  # 如果远程注册表不是HTTPS, 就填写
+  # DOCKER_TLS_CERTDIR: ""
+  # 如果Gitlab Runner是Docker安装的, 除非你知道在做什么, 否则不要修改
+  DOCKER_HOST: tcp://docker:2375
+  PROJECT_NAME_CLIENT: "frontend"
+  PROJECT_NAME_SERVER: "backend"
+cache:
+  key: nginx-quic
+  paths:
+    - frontend/node_modules
+
+# 初始化运行时的工作, 用于创建基本的环境, 后续环境不再需要时, 把FIRST开关设为非true即可
+#job_first_run:
+#  stage: first_run
+#  #  tags:
+#  #    - shell
+#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+#  script:
+#    - |
+#      cat > env_vars.sh <<EOF
+#       #!/usr/bin/bash
+#       export DOMAIN=${DOMAIN}
+#       export NGINX_DIR=${NGINX_DIR}
+#       export HTML_DIR=${NGINX_DIR}/html
+#       export CONF_DIR=${NGINX_DIR}/conf
+#       export SSL_DIR=${NGINX_DIR}/ssl
+#      EOF
+#    - chmod +x ./env_vars.sh
+#    - ./env_vars.sh
+#    - cat env_vars.sh
+#    - tar -czf dist.tar.gz -C frontend/dist .
+#    - sshpass -e scp -o stricthostkeychecking=no docker/nginx/first.sh env_vars.sh dist.tar.gz ${s_user}@${s_host1}:/tmp/
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      chmod +x /tmp/env_vars.sh
+#      ; source /tmp/env_vars.sh
+#      ; echo ${HTML_DIR}
+#      ; tar -zxvf /tmp/dist.tar.gz -C ${HTML_DIR}
+#      ; chmod +x /tmp/first.sh
+#      ; source /tmp/first.sh
+#      ; rm -rf /tmp/env_vars.sh
+#      ; rm -rf /tmp/first.sh
+#      ; rm -rf /tmp/dist.tar.gz
+#      '
+#  only:
+#    variables:
+#      - $FIRST == "true"
+#
+#job_test:
+#  stage: test
+#  image: golang:1.22.2-alpine3.19
+#  tags:
+#    - go
+#  before_script:
+#    - cd backend
+#  script:
+#    - go test ./...
+#  after_script:
+#    - |
+#      if [ $? -ne 0 ]; then
+#        echo "测试失败
+#        exit 1
+#      fi
+#  only:
+#    - dev
+
+job_frontend_build:
+  stage: build
+  image: node:18-alpine
+  tags:
+    - ${FRONTEND_RUNNER}
+  before_script:
+    - cd frontend
+    - npm install pnpm -g
+    - rm -rf node_modules
+  script:
+    - ls
+    - pnpm install
+    - pnpm build
+  artifacts:
+    paths:
+      - frontend/dist
+  only:
+    - dev
+#
+#job_web_update:
+#  stage: deploy
+#  image: node:18-alpine
+#  script:
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} 'docker exec -it nginx-quic nginx -s reload'
+#  only:
+#    - dev
+
+job_backend_build:
+  stage: build
+  variables:
+    FF_NETWORK_PER_BUILD: "true"
+  tags:
+    - ${DOCKER_RUNNER_TAG}
+    - did2
+  image: docker:dind
+  services:
+    #- docker:26.1.0-dind-alpine3.19
+    - docker:dind
+  before_script:
+    - docker info # 验证 Docker 是否正常工作
+    - docker version
+    - docker login  $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
+  script:
+    - docker build -t $IMAGE_TAG:$VERSION -f backend/Dockerfile .
+    - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+  only:
+    - dev
+
+#job_deploy:
+#  stage: deploy
+#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+#  only:
+#    - dev
+#
+#  script:
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      argocd login ${ARGO_SERVER} --username ${ARGO_USER} --password ${ARGO_PASS},. --insecure;
+#      argocd create -f /tmp/application-frontend.yml
+#      '
+#job_deploy:
+#  stage: deploy
+#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+#  only:
+#
+#  script:
+#    - |
+#      cat > env_vars.sh <<EOF
+#        #!/usr/bin/bash
+#        export DOMAIN=${DOMAIN}
+#        export NGINX_DIR=${NGINX_DIR}
+#        export HTML_DIR=${NGINX_DIR}/html
+#        export CONF_DIR=${NGINX_DIR}/conf
+#        export SSL_DIR=${NGINX_DIR}/ssl
+#      EOF
+#    - chmod +x env_vars.sh
+#    - ./env_vars.sh
+#    - cat env_vars.sh
+#    - tar -czf dist.tar.gz -C frontend/dist .
+#    - sshpass -e scp -o stricthostkeychecking=no dist.tar.gz env_vars.sh ${s_user}@${s_host1}:/tmp/
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      chmod +x /tmp/env_vars.sh
+#      ; source /tmp/env_vars.sh
+#      ; echo "HTML_DIR: ${HTML_DIR}"
+#      ; tar -zxvf /tmp/dist.tar.gz -C ${HTML_DIR}
+#      ; docker restart nginx-quic
+#      ; rm -rf /tmp/env_vars.sh
+#      ; rm -rf /tmp/first.sh
+#      ; rm -rf /tmp/dist.tar.gz
+#      '
+
+job_verify:
+  stage: verify
+  image: ccr.ccs.tencentyun.com/lisa/alpine
+  tags:
+    - shell
+  before_script:
+    - apk add curl
+  script:
+    - curl -S https://${s_host1}
+    - curl -L http://${s_host1}
+  only:
+    - dev

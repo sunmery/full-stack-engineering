@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: frontend
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx-quic
+          image: ccr.ccs.tencentyun.com/lisa/frontend:v2  # 替换成您的镜像
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          volumeMounts:
+            - name: html-volume
+              mountPath: /etc/nginx/html
+            - name: ssl-volume
+              mountPath: /etc/nginx/ssl
+            - name: conf-volume
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: html-volume
+          hostPath:
+            path: /home/nginx/html
+        - name: ssl-volume
+          hostPath:
+            path: /home/nginx/ssl
+        - name: conf-volume
+          hostPath:
+            path: /home/nginx/conf

@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: frontend
+  namespace: argocd
+spec:
+  # 说明
+  description: Project for frontend applications
+  # 允许的集群
+  destinations:
+    # 允许的命名空间
+    - name: frontend
+      namespace: "frontend"
+      # 集群地址
+      server: https://192.168.2.160:6443
+    - name: backend
+      namespace: "backend"
+      # 集群地址
+      server: https://192.168.2.160:6443
+  # 允许的目标 K8s 资源类型
+  clusterResourceWhitelist:
+    - group: '*'
+      #kind: '*'
+      kind: Namespace
+  # Allow all namespaced-scoped resources to be created, except for ResourceQuota, LimitRange, NetworkPolicy
+  #namespaceResourceBlacklist:
+  #  - group: ''
+  #    kind: ResourceQuota
+  #  - group: ''
+  #    kind: LimitRange
+  #  - group: ''
+  #    kind: NetworkPolicy
+  # Deny all namespaced-scoped resources from being created, except for Deployment and StatefulSet
+  #namespaceResourceWhitelist:
+  #  - group: 'apps'
+  #    kind: Deployment
+  #  - group: 'apps'
+  #    kind: StatefulSet
+  sourceRepos:
+    - "*"
+  roles:
+    - name: lx
+      description: Access role for lx user
+      policies:
+        - p, proj:default:lx, applications, *, frontend/*, allow
+        - p, proj:frontend:lx, applications, get, frontend/*, allow
+        - p, proj:frontend:lx, applications, create, frontend/*, allow
+        - p, proj:frontend:lx, applications, sync, frontend/*, allow
+        - p, proj:frontend:lx, applications, delete, frontend/*, allow
+        - p, proj:frontend:lx, repositories, *, frontend/*, allow
+        - p, proj:frontend:lx, clusters, get, frontend/*, allow
+  orphanedResources:
+    warn: true
+# kubectl apply -f project-app.yml
