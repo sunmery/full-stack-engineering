@@ -74,27 +74,24 @@ cache:
       --password ${ARGO_PASS}
       --insecure
 
-  #job_frontend_test:
-  #  stage: test
-  #  image: node:18-alpine
-  #  tags:
-  #    - ${FRONTEND_TAG}
-  #  before_script:
-  #    - cd frontend
-  #    - npm install -g pnpm
-  #    - rm -rf node_modules
-  #  script:
-  #    - pnpm i
-  #    - pnpm lint
-  #  after_script:
-  #    - |
-  #      if [ $? -ne 0 ]; then
-  #        echo "测试失败
-  #        exit 1
-  #      fi
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
+#job_frontend_test:
+#  stage: test
+#  image: node:18-alpine
+#  tags:
+#    - ${FRONTEND_TAG}
+#  before_script:
+#    - cd frontend
+#    - npm install -g pnpm
+#    - rm -rf node_modules
+#  script:
+#    - pnpm i
+#    - pnpm lint
+#  after_script:
+#    - |
+#      if [ $? -ne 0 ]; then
+#        echo "测试失败
+#        exit 1
+#      fi
 
 job_backend_test:
   stage: test
@@ -111,8 +108,6 @@ job_backend_test:
         echo "测试失败
         exit 1
       fi
-  #  only:
-  #    - main
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
@@ -173,9 +168,9 @@ job_create_argo_proj:
       rm -rf /tmp/create-frontend-proj.yml;
       rm -rf /tmp/create-backend-proj.yml
       '
-  only:
-    variables:
-      - $BACKEND_INIT == "true"
+  rules:
+    - if: '$BACKEND_INIT == "true"'
+      when: always
 
 job_manifests:
   stage: manifests
