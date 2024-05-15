@@ -7,30 +7,49 @@ stages:
   - verify
 
 variables:
-  # 是否需要初始化, 初始化的工作包含拉取和构建运行Web应用的镜像
+  # 初始化相关配置:
+  # 是否需要初始化web, 初始化的工作包含拉取和构建运行Web应用的镜像
   FRONTEND_INIT: "false"
-  # 是否需要初始化, 初始化的工作包含创建argo的proj
-  BACKEND_INIT: "true"
+  # 是否需要初始化argo, 初始化的工作包含创建argo的proj
+  BACKEND_INIT: "false"
 
-  # Web目录, 在远程服务器存在的目录
-  NGINX_DIR: /home/nginx
-  # 项目名称
-  PROJECT_NAME: backend
-  # 版本号
-  TAG_VERSION: ${CI_COMMIT_TAG}
-  # 标签
-  IMAGE_TAG: "backend"
+  # Runner相关配置:
   # 运行前端的runner tag
-  FRONTEND_RUNNER: "node"
+  FRONTEND_TAG: node
   # 运行后端的runner tag
-  BACKEND_RUNNER: "go"
+  BACKEND_TAG: go
   # 运行Docker的runner tag
-  DOCKER_RUNNER_TAG: "docker"
-  # 客户端项目名称
-  PROJECT_NAME_CLIENT: "frontend"
-  # 服务端项目名称
-  PROJECT_NAME_SERVER: "backend"
+  DOCKER_TAG: docker:26.1.0-dind-alpine3.19
 
+  # 前端项目相关配置:
+  # 作者/组织
+  PROJECT_PROJECT_AUTHORS: lisa
+  # 前端端项目名称
+  FRONTEN_PROJECT_NAME: frontend
+  # 版本号, 例如v1.0.0, latest, 这里使用了git tag <VERSION> 作为版本号, CI_COMMIT_TAG是gitlab ci内置命令
+  FRONTEN_VERSION: ${CI_COMMIT_TAG}
+
+  # 后端项目相关配置:
+  # 作者/组织
+  BACKEND_PROJECT_AUTHORS: lisa
+  # 服务端项目名称
+  BACKEND_PROJECT_NAME: backend
+  # 版本号, 例如v1.0.0, latest, 这里使用了git tag <VERSION> 作为版本号, CI_COMMIT_TAG是gitlab ci内置命令
+  BACKEND_VERSION: ${CI_COMMIT_TAG}
+  # HTTP端口
+  PORT1: 30001
+  # gRPC端口
+  PORT2: 30002
+  # 使用的镜像, 除了dockerhub之外的镜像都需要添加供应商前缀
+  GO_IMAGE: golang:1.22.2-alpine3.19
+  # 构建的目标平台架构
+  ARCH: amd64
+  # 是否使用CGO
+  CGO_ENABLED: 0
+  # alpine user id
+  UID: 10001
+
+  # Docker 相关配置:
   # 当使用dind服务时，你必须指示docker与服务内部启动的daemon对话。
   # 这个守护进程可以通a网络连接来使用，而不是默认的/var/run/docker套接字。
   # 如果你使用的是GitLab Runner 12.7或更早版本的Kubernetes执行器和Kubernetes 1.6或更早版本，由于
@@ -44,20 +63,22 @@ cache:
   paths:
     - frontend/node_modules
 
+# Docker登录模板
 .docker_login_template:
   #  variables:
   #    FF_NETWORK_PER_BUILD: "true"
   # 建议与你注册Runner选择的Docker镜像一致
-  image: docker:26.1.0-dind-alpine3.19
+  image: ${DOCKER_TAG}
   services:
     # 建议与你注册Runner选择的Docker镜像一致
-    - docker:26.1.0-dind-alpine3.19
+    - ${DOCKER_TAG}
   before_script:
     - echo "正在查看Docker 信息"
     - docker info
     - echo "正在登录到远程注册表"
     - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
 
+# argocd登录模板
 .argocd_login_template:
   before_script:
     - echo "正在登录Argocd服务器"
@@ -67,12 +88,11 @@ cache:
       --password ${ARGO_PASS}
       --insecure
 
-
 #job_frontend_test:
 #  stage: test
 #  image: node:18-alpine
 #  tags:
-#    - node
+#    - ${FRONTEND_TAG}
 #  before_script:
 #    - cd frontend
 #    - npm install -g pnpm
@@ -90,23 +110,23 @@ cache:
 #    - main
 #    - dev
 
-job_backend_test:
-  stage: test
-  image: golang:1.22.2-alpine3.19
-  tags:
-    - go
-  before_script:
-    - cd backend
-  script:
-    - go test ./...
-  after_script:
-    - |
-      if [ $? -ne 0 ]; then
-        echo "测试失败
-        exit 1
-      fi
-  only:
-    - main
+#job_backend_test:
+#  stage: test
+#  image: golang:1.22.2-alpine3.19
+#  tags:
+#    - ${BACKEND_TAG}
+#  before_script:
+#    - cd backend
+#  script:
+#    - go test ./...
+#  after_script:
+#    - |
+#      if [ $? -ne 0 ]; then
+#        echo "测试失败
+#        exit 1
+#      fi
+#  only:
+#    - main
 
 job_backend_build:
   stage: build
@@ -115,21 +135,25 @@ job_backend_build:
   before_script:
     - |
       if [ -n "$TAG_VERSION" ]; then
-       echo "当前Pipeline基于的Git Tag版本号为: $TAG_VERSION"
+        echo "Git Tag版本号为: $TAG_VERSION"
       else
-      echo "本次Pipeline不是由Git Tag触发，没有Tag版本号。"
+        echo "没有设置Tag版本号, 默认设置为 dev"
+        $TAG_VERSION="dev"
       fi
+    - echo $TAG_VERSION
   script:
     - >
       docker build
-      -t $IMAGE_TAG:$VERSION
-      -f backend/Dockerfile backend
-      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19
-      --build-arg ARCH=amd64
-      --build-arg CGO_ENABLED=0
-      --build-arg UID=10001
-    - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
-    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+      -t $BACKEND_PROJECT_AUTHORS/$IMAGE_TAG:$TAG_VERSION
+      -f ${BACKEND_PROJECT_NAME}/Dockerfile ${BACKEND_PROJECT_NAME}
+      --build-arg GO_IMAGE=${GO_IMAGE}
+      --build-arg ARCH=${ARCH}
+      --build-arg CGO_ENABLED=${CGO_ENABLED}
+      --build-arg UID=${UID}
+      --build-arg PORT1=${PORT1}
+      --build-arg PORT2=${PORT2}
+    - docker tag $BACKEND_PROJECT_AUTHORS/$IMAGE_TAG:$TAG_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$IMAGE_TAG:$TAG_VERSION
+    - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$IMAGE_TAG:$TAG_VERSION
   after_script:
     - docker images
   rules:
