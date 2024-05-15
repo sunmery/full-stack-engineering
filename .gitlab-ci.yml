@@ -118,13 +118,13 @@ job_backend_build:
     - docker version
     - docker login -u $REGISTER_USERNAME -p $REGISTER_PASSWORD $REGISTER_ADDRESS
   script:
-    - |
-      docker build \
-      -t $IMAGE_TAG:$VERSION \
-      -f backend/Dockerfile backend \
-      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19 \
-      --build-arg ARCH=amd64 \
-      --build-arg CGO_ENABLED=0 \
+    - >
+      docker build
+      -t $IMAGE_TAG:$VERSION
+      -f backend/Dockerfile backend
+      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19
+      --build-arg ARCH=amd64
+      --build-arg CGO_ENABLED=0
       --build-arg UID=10001
     - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
     - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
