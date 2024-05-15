@@ -20,7 +20,8 @@ export CLUSTER_SERVER="https://192.168.2.160:6443"
 export BRANCH="main"
 # 仓库地址
 #export PROJECT_GIT_URL="https://gitlab.com/lookeke/full-stack-engineering.git"
-export PROJECT_GIT_URL="https://gitlab.com/lookeke/manifests.git"
+#export PROJECT_GIT_URL="https://gitlab.com/lookeke/manifests.git"
+export PROJECT_GIT_URL="http://192.168.2.158:7080/root/manifests.git"
 # Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
 export FRONTEND_DEPLOY_PATH="full-stack-engineering/frontend"
 # 前端命名空间, 不需要额外创建命名空间选择default即可
