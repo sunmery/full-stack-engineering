@@ -55,20 +55,7 @@ cache:
     - echo "正在查看Docker 信息"
     - docker info
     - echo "正在登录到远程注册表"
-    - docker login -u $REGISTER_USERNAME -p $REGISTER_PASSWORD $REGISTER_ADDRESS
-
-.docker_build_template:
-  script:
-    - >
-      docker build
-      -t $IMAGE_TAG:$VERSION
-      -f backend/Dockerfile backend
-      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19
-      --build-arg ARCH=amd64
-      --build-arg CGO_ENABLED=0
-      --build-arg UID=10001
-    - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
-    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+    - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
 
 .argocd_login_template:
   before_script:
@@ -83,11 +70,13 @@ job_frontend_test:
   stage: test
   image: golang:1.22.2-alpine3.19
   tags:
-    - go
+    - node
   before_script:
     - cd backend
+    - npm install -g pnpm
+    - rm -rf node_modules
   script:
-    - go test ./...
+    - pnpm lint
   after_script:
     - |
       if [ $? -ne 0 ]; then
@@ -96,6 +85,7 @@ job_frontend_test:
       fi
   only:
     - main
+    - dev
 
 job_backend_test:
   stage: test
@@ -115,26 +105,28 @@ job_backend_test:
   only:
     - main
 
-#
-#job_web_update:
-#  stage: deploy
-#  image: node:18-alpine
-#  script:
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} 'docker exec -it nginx-quic nginx -s reload'
-#  only:
-#    - main
-
 job_backend_build:
   stage: build
   extends:
     - .docker_login_template
-    - .docker_build_template
+  script:
+    - >
+      docker build
+      -t $IMAGE_TAG:$VERSION
+      -f backend/Dockerfile backend
+      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19
+      --build-arg ARCH=amd64
+      --build-arg CGO_ENABLED=0
+      --build-arg UID=10001
+    - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
   only:
     - main
     - dev
 
 job_create_argo_proj:
   stage: init
+  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
   extends:
     - .argocd_login_template
   before_script:
