@@ -138,7 +138,7 @@ job_backend_build:
         echo "Git Tag版本号为: $TAG_VERSION"
       else
         echo "没有设置Tag版本号, 默认设置为 dev"
-        $TAG_VERSION="dev"
+        export TAG_VERSION="dev"
       fi
     - echo $TAG_VERSION
   script:
