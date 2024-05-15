@@ -81,7 +81,7 @@ cache:
 #        exit 1
 #      fi
 #  only:
-#    - dev
+#    - main
 
 job_frontend_build:
   stage: build
@@ -100,7 +100,7 @@ job_frontend_build:
     paths:
       - frontend/dist
   only:
-    - dev
+    - main
 #
 #job_web_update:
 #  stage: deploy
@@ -108,7 +108,7 @@ job_frontend_build:
 #  script:
 #    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} 'docker exec -it nginx-quic nginx -s reload'
 #  only:
-#    - dev
+#    - main
 
 job_backend_build:
   stage: build
@@ -130,13 +130,13 @@ job_backend_build:
     - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
     - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
   only:
-    - dev
+    - main
 
 #job_deploy:
 #  stage: deploy
 #  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
 #  only:
-#    - dev
+#    - main
 #
 #  script:
 #    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
@@ -185,4 +185,4 @@ job_verify:
     - curl -S https://${s_host1}
     - curl -L http://${s_host1}
   only:
-    - dev
+    - main
