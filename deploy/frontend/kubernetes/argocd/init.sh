@@ -28,7 +28,7 @@ export FRONTEND_PROJECT_NAME="frontend"
 # 前端应用的名称
 export FRONTEND_APPLICATION_NAME="react"
 # Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
-export FRONTEND_DEPLOY_PATH="frontend/ci"
+export FRONTEND_DEPLOY_PATH="https://gitlab.com/lookeke/manifests/-/blob/main/full-stack-engineering/frontend"
 
 # 后端端命名空间, 不需要额外创建命名空间选择default即可
 export BACKEND_NAMESPACE="backend"
@@ -37,7 +37,7 @@ export BACKEND_PROJECT_NAME="backend"
 # 后端应用的名称
 export BACKEND_APPLICATION_NAME="go"
 # Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
-export BACKEND_DEPLOY_PATH="backend/ci"
+export BACKEND_DEPLOY_PATH="https://gitlab.com/lookeke/manifests/-/blob/main/full-stack-engineering/backend"
 
 # 获取Git Repo URL
 if [ -z "$BRANCH" ]; then
