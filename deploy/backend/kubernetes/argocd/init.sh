@@ -90,6 +90,72 @@ data:
 # kubectl apply -f argocd-rbac-cm -n ${ARGOCD_NAMESPACE}
 EOF
 
+cat > create-frontend-proj.yml <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ${FRONTEND_NAMESPACE} # 项目名称
+  namespace: ${ARGOCD_NAMESPACE} # 项目所在的命名空间，默认为argocd，可根据实际情况调整
+spec:
+  # 项目描述
+  description: "This project is for managing frontend applications"
+
+  # 允许应用部署到的命名空间列表
+  destinations:
+  - namespace: ${FRONTEND_NAMESPACE}
+    server: ${CLUSTER_SERVER} # 集群API地址，示例值需替换为实际地址
+
+  # 源代码仓库配置
+  sourceRepos:
+  - ${PROJECT_GIT_URL} # 允许使用的Git仓库地址，根据实际情况修改
+
+  # 角色与成员
+  roles:
+    - name: ${ROLE_NAME} # 角色名称
+      policies:
+      # 允许admin角色在frontend项目中对所有应用进行所有操作
+      - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, *, ${FRONTEND_PROJECT_NAME}/*, allow
+      # 允许查看frontend命名空间相关的集群信息
+      - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${FRONTEND_PROJECT_NAME}/*, allow
+
+  # 可选：项目默认值
+  # 这些默认值可以被应用级别的设置覆盖
+  # clusterResourceWhitelist, namespaceResourceBlacklist等可以根据需要添加
+EOF
+
+cat > create-backend-proj.yml <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ${BACKEND_NAMESPACE} # 项目名称
+  namespace: ${ARGOCD_NAMESPACE} # 项目所在的命名空间，默认为argocd，可根据实际情况调整
+spec:
+  # 项目描述
+  description: "This project is for managing BACKEND applications"
+
+  # 允许应用部署到的命名空间列表
+  destinations:
+  - namespace: ${BACKEND_NAMESPACE}
+    server: ${CLUSTER_SERVER} # 集群API地址，示例值需替换为实际地址
+
+  # 源代码仓库配置
+  sourceRepos:
+  - ${PROJECT_GIT_URL} # 允许使用的Git仓库地址，根据实际情况修改
+
+  # 角色与成员
+  roles:
+  - name: ${ROLE_NAME} # 角色名称
+    # 注意这里的subjects配置应当符合Argo CD的RBAC规范，例如使用proj:backend:admin
+    # 定义角色权限
+    policies:
+    - p, proj:${BACKEND_PROJECT_NAME}:${ROLE_NAME}, applications, *, ${BACKEND_PROJECT_NAME}/*, allow # 允许admin角色在BACKEND项目中对所有应用进行所有操作
+    - p, proj:${BACKEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${BACKEND_PROJECT_NAME}/*, allow # 允许查看集群信息
+
+  # 可选：项目默认值
+  # 这些默认值可以被应用级别的设置覆盖
+  # clusterResourceWhitelist, namespaceResourceBlacklist等可以根据需要添加
+EOF
+
 # 创建前端项目应用
 cat > application-frontend.yml <<EOF
 apiVersion: argoproj.io/v1alpha1  # 指定 Argo CD API 版本
@@ -176,13 +242,13 @@ spec:
     - name: ${ROLE_NAME}
       description: Access role for ROLE_NAME user
       policies:
-        - p, proj:default:${ROLE_NAME}, applications, *, frontend/*, allow
-        - p, proj:frontend:${ROLE_NAME}, applications, get, frontend/*, allow
-        - p, proj:frontend:${ROLE_NAME}, applications, create, frontend/*, allow
-        - p, proj:frontend:${ROLE_NAME}, applications, sync, frontend/*, allow
-        - p, proj:frontend:${ROLE_NAME}, applications, delete, frontend/*, allow
-        - p, proj:frontend:${ROLE_NAME}, repositories, *, frontend/*, allow
-        - p, proj:frontend:${ROLE_NAME}, clusters, get, frontend/*, allow
+        - p, proj:default:${ROLE_NAME}, applications, *, ${FRONTEND_PROJECT_NAME}/*, allow
+        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, get, ${FRONTEND_PROJECT_NAME}/*, allow
+        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, create, ${FRONTEND_PROJECT_NAME}/*, allow
+        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, sync, ${FRONTEND_PROJECT_NAME}/*, allow
+        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, delete, ${FRONTEND_PROJECT_NAME}/*, allow
+        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, repositories, *, ${FRONTEND_PROJECT_NAME}/*, allow
+        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${FRONTEND_PROJECT_NAME}/*, allow
   orphanedResources:
     warn: true
 # kubectl apply -f project-app.yml

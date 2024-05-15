@@ -8,8 +8,8 @@ metadata:
 data:
   policy.csv: |
     p, role:admin, applications, *, *, allow
-    p, role:lx, applications, *, *, allow
+    p, role:admin, applications, *, *, allow
     g, admin, role:admin
-    g, lx, proj:frontend:lx
-    g, lx, proj:backend:lx
+    g, admin, proj:frontend:admin
+    g, admin, proj:backend:admin
 # kubectl apply -f argocd-rbac-cm -n argo

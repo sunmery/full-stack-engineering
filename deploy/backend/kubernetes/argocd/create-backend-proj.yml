@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: backend # 项目名称
+  namespace: argo # 项目所在的命名空间，默认为argocd，可根据实际情况调整
+spec:
+  # 项目描述
+  description: "This project is for managing BACKEND applications"
+
+  # 允许应用部署到的命名空间列表
+  destinations:
+  - namespace: backend
+    server: https://192.168.2.160:6443 # 集群API地址，示例值需替换为实际地址
+
+  # 源代码仓库配置
+  sourceRepos:
+  - https://gitlab.com/lookeke/full-stack-engineering.git # 允许使用的Git仓库地址，根据实际情况修改
+
+  # 角色与成员
+  roles:
+  - name: admin # 角色名称
+    # 注意这里的subjects配置应当符合Argo CD的RBAC规范，例如使用proj:backend:admin
+    # 定义角色权限
+    policies:
+    - p, proj:backend:admin, applications, *, backend/*, allow # 允许admin角色在BACKEND项目中对所有应用进行所有操作
+    - p, proj:backend:admin, clusters, get, backend/*, allow # 允许查看集群信息
+
+  # 可选：项目默认值
+  # 这些默认值可以被应用级别的设置覆盖
+  # clusterResourceWhitelist, namespaceResourceBlacklist等可以根据需要添加

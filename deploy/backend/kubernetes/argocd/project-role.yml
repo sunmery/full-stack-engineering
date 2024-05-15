@@ -6,5 +6,5 @@ metadata:
   name: argocd-cm
   namespace: argo
 data:
-  accounts.lx: "apiKey, login"
+  accounts.admin: "apiKey, login"
 # kubectl apply -f argocd-cm.yaml -n argo

@@ -1,13 +1,17 @@
 stages:
-  #  - test
+  - init
+  - test
   - build
   #  - first_run
   #  - deploy
   - verify
 
 variables:
-  # 是否为第一次运行, 包含拉取和构建运行Web应用的镜像
-  FIRST: "true"
+  # 是否需要初始化, 初始化的工作包含拉取和构建运行Web应用的镜像
+  FRONTEND_INIT: "false"
+  # 是否需要初始化, 初始化的工作包含创建argo的proj
+  BACKEND_INIT: "true"
+
   # Web目录, 在远程服务器存在的目录
   NGINX_DIR: /home/nginx
   # 项目名称
@@ -40,59 +44,77 @@ cache:
   paths:
     - frontend/node_modules
 
-# 初始化运行时的工作, 用于创建基本的环境, 后续环境不再需要时, 把FIRST开关设为非true即可
-#job_first_run:
-#  stage: first_run
-#  #  tags:
-#  #    - shell
-#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-#  script:
-#    - |
-#      cat > env_vars.sh <<EOF
-#       #!/usr/bin/bash
-#       export DOMAIN=${DOMAIN}
-#       export NGINX_DIR=${NGINX_DIR}
-#       export HTML_DIR=${NGINX_DIR}/html
-#       export CONF_DIR=${NGINX_DIR}/conf
-#       export SSL_DIR=${NGINX_DIR}/ssl
-#      EOF
-#    - chmod +x ./env_vars.sh
-#    - ./env_vars.sh
-#    - cat env_vars.sh
-#    - tar -czf dist.tar.gz -C frontend/dist .
-#    - sshpass -e scp -o stricthostkeychecking=no docker/nginx/first.sh env_vars.sh dist.tar.gz ${s_user}@${s_host1}:/tmp/
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      chmod +x /tmp/env_vars.sh
-#      ; source /tmp/env_vars.sh
-#      ; echo ${HTML_DIR}
-#      ; tar -zxvf /tmp/dist.tar.gz -C ${HTML_DIR}
-#      ; chmod +x /tmp/first.sh
-#      ; source /tmp/first.sh
-#      ; rm -rf /tmp/env_vars.sh
-#      ; rm -rf /tmp/first.sh
-#      ; rm -rf /tmp/dist.tar.gz
-#      '
-#  only:
-#    variables:
-#      - $FIRST == "true"
-#
-#job_test:
-#  stage: test
-#  image: golang:1.22.2-alpine3.19
-#  tags:
-#    - go
-#  before_script:
-#    - cd backend
-#  script:
-#    - go test ./...
-#  after_script:
-#    - |
-#      if [ $? -ne 0 ]; then
-#        echo "测试失败
-#        exit 1
-#      fi
-#  only:
-#    - main
+.docker_login_template:
+  #  variables:
+  #    FF_NETWORK_PER_BUILD: "true"
+  # 建议与你注册Runner选择的Docker镜像一致
+  image: docker:26.1.0-dind-alpine3.19
+  services:
+    # 建议与你注册Runner选择的Docker镜像一致
+    - docker:26.1.0-dind-alpine3.19
+  before_script:
+    - echo "正在查看Docker 信息"
+    - docker info
+    - echo "正在登录到远程注册表"
+    - docker login -u $REGISTER_USERNAME -p $REGISTER_PASSWORD $REGISTER_ADDRESS
+
+.docker_build_template:
+  script:
+    - >
+      docker build
+      -t $IMAGE_TAG:$VERSION
+      -f backend/Dockerfile backend
+      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19
+      --build-arg ARCH=amd64
+      --build-arg CGO_ENABLED=0
+      --build-arg UID=10001
+    - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+
+.argocd_login_template:
+  before_script:
+    - echo "正在登录Argocd服务器"
+    - >
+      argocd login ${ARGO_SERVER} 
+      --username ${ARGO_USER} 
+      --password ${ARGO_PASS}
+      --insecure
+
+job_frontend_test:
+  stage: test
+  image: golang:1.22.2-alpine3.19
+  tags:
+    - go
+  before_script:
+    - cd backend
+  script:
+    - go test ./...
+  after_script:
+    - |
+      if [ $? -ne 0 ]; then
+        echo "测试失败
+        exit 1
+      fi
+  only:
+    - main
+
+job_backend_test:
+  stage: test
+  image: golang:1.22.2-alpine3.19
+  tags:
+    - go
+  before_script:
+    - cd backend
+  script:
+    - go test ./...
+  after_script:
+    - |
+      if [ $? -ne 0 ]; then
+        echo "测试失败
+        exit 1
+      fi
+  only:
+    - main
 
 #
 #job_web_update:
@@ -105,81 +127,55 @@ cache:
 
 job_backend_build:
   stage: build
-  #  variables:
-  #    FF_NETWORK_PER_BUILD: "true"
-  # 建议与你注册Runner选择的Docker镜像一致
-  image: docker:26.1.0-dind-alpine3.19
-  services:
-    # 建议与你注册Runner选择的Docker镜像一致
-    - docker:26.1.0-dind-alpine3.19
-  before_script:
-    - echo 验证 Docker 是否正常工作
-    - docker info
-    - docker version
-    - docker login -u $REGISTER_USERNAME -p $REGISTER_PASSWORD $REGISTER_ADDRESS
-  script:
-    - >
-      docker build
-      -t $IMAGE_TAG:$VERSION
-      -f backend/Dockerfile backend
-      --build-arg GO_IMAGE=golang:1.22.2-alpine3.19
-      --build-arg ARCH=amd64
-      --build-arg CGO_ENABLED=0
-      --build-arg UID=10001
-    - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
-    - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+  extends:
+    - .docker_login_template
+    - .docker_build_template
   only:
     - main
     - dev
+
+job_create_argo_proj:
+  stage: init
+  extends:
+    - .argocd_login_template
+  before_script:
+    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-proj.yml ${s_user}@${s_host1}:/tmp/
+    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-proj.yml ${s_user}@${s_host1}:/tmp/
+  script:
+    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+      argocd create -f /tmp/create-frontend-proj.yml
+      argocd create -f /tmp/create-backend-proj.yml
+      '
+  after_script:
+    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+      rm -rf /tmp/create-frontend-proj.yml
+      rm -rf /tmp/create-backend-proj.yml
+      '
+  only:
+    variables:
+      - $BACKEND_INIT == "true"
 
 job_deploy:
   stage: deploy
   image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+  extends:
+    - .argocd_login_template
   before_script:
-    - >
-      argocd login ${ARGO_SERVER} 
-      --username ${ARGO_USER} 
-      --password ${ARGO_PASS}
-      --insecure
+    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/application-frontend.yml ${s_user}@${s_host1}:/tmp/
+    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/application-backend.yml ${s_user}@${s_host1}:/tmp/
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd login ${ARGO_SERVER} --username ${ARGO_USER} --password ${ARGO_PASS},. --insecure;
-      argocd create -f /tmp/application-frontend.yml
+      argocd app create -f /tmp/application-frontend.yml
+      argocd app create -f /tmp/application-backend.yml
+      '
+  after_script:
+    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+      rm -rf /tmp/application-frontend.yml
+      rm -rf /tmp/application-backend.yml
       '
   only:
     - main
     - dev
-
-#job_deploy:
-#  stage: deploy
-#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-#  only:
-#
-#  script:
-#    - |
-#      cat > env_vars.sh <<EOF
-#        #!/usr/bin/bash
-#        export DOMAIN=${DOMAIN}
-#        export NGINX_DIR=${NGINX_DIR}
-#        export HTML_DIR=${NGINX_DIR}/html
-#        export CONF_DIR=${NGINX_DIR}/conf
-#        export SSL_DIR=${NGINX_DIR}/ssl
-#      EOF
-#    - chmod +x env_vars.sh
-#    - ./env_vars.sh
-#    - cat env_vars.sh
-#    - tar -czf dist.tar.gz -C frontend/dist .
-#    - sshpass -e scp -o stricthostkeychecking=no dist.tar.gz env_vars.sh ${s_user}@${s_host1}:/tmp/
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      chmod +x /tmp/env_vars.sh
-#      ; source /tmp/env_vars.sh
-#      ; echo "HTML_DIR: ${HTML_DIR}"
-#      ; tar -zxvf /tmp/dist.tar.gz -C ${HTML_DIR}
-#      ; docker restart nginx-quic
-#      ; rm -rf /tmp/env_vars.sh
-#      ; rm -rf /tmp/first.sh
-#      ; rm -rf /tmp/dist.tar.gz
-#      '
 
 job_verify:
   stage: verify
@@ -190,7 +186,8 @@ job_verify:
     - apk add curl
   script:
     - curl -S https://${s_host1}
-    - curl -L http://${s_host1}
+    - curl -L http://${s_host1}:30001/helloworld/lisa
+    - curl -L http://${s_host1}:30002/helloworld/lisa
   only:
     - main
     - dev
