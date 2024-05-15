@@ -72,7 +72,7 @@ job_frontend_test:
   tags:
     - node
   before_script:
-    - cd backend
+    - cd frontend
     - npm install -g pnpm
     - rm -rf node_modules
   script:
