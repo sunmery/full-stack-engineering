@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: .
-    image: lisa/backend:v1.0.1
+    image: lisa/backend:dev
     # 把<appname> 替换为go mod xxx生成的名称, 也就是go build 之后的应用名称, 例如backend
     container_name: backend
     # 重启策略, 遇到错误就停止

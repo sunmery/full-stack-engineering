@@ -16,7 +16,7 @@ variables:
   # 项目名称
   PROJECT_NAME: backend
   # 版本号
-  VERSION: "v1.0.0"
+  TAG_VERSION: ${CI_COMMIT_TAG}
   # 标签
   IMAGE_TAG: "backend"
   # 运行前端的runner tag
@@ -122,6 +122,8 @@ job_backend_build:
       --build-arg UID=10001
     - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
     - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
+  after_script:
+    - docker images
   only:
     - main
     - dev
@@ -138,7 +140,7 @@ job_create_argo_proj:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       argocd proj create -f /tmp/create-frontend-proj.yml;
       argocd proj create -f /tmp/create-backend-proj.yml;
-      argocd proj list
+      argocd proj list;
       '
   after_script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
@@ -155,12 +157,12 @@ job_deploy:
   extends:
     - .argocd_login_template
   before_script:
-    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/application-frontend.yml ${s_user}@${s_host1}:/tmp/
-    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/application-backend.yml ${s_user}@${s_host1}:/tmp/
+    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-app.yml ${s_user}@${s_host1}:/tmp/
+    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-app.yml ${s_user}@${s_host1}:/tmp/
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd app create -f /tmp/application-frontend.yml;
-      argocd app create -f /tmp/application-backend.yml;
+      argocd app create -f /tmp/create-frontend-app.yml;
+      argocd app create -f /tmp/create-backend-app.yml;
       argocd app list;
       '
   after_script:

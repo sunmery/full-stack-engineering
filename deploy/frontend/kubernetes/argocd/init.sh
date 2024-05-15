@@ -156,7 +156,7 @@ spec:
 EOF
 
 # 创建前端项目应用
-cat > application-frontend.yml <<EOF
+cat > create-backend-app.yml <<EOF
 apiVersion: argoproj.io/v1alpha1  # 指定 Argo CD API 版本
 kind: Application  # 定义资源类型为 Application
 metadata: # 元数据部分
@@ -194,61 +194,6 @@ spec: # 规范部分
         duration: 10s  # 初始重试间隔
         factor: 2  # 重试间隔因子
         maxDuration: 3m  # 最大重试间隔
-EOF
-
-cat > project-app.yml <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: ${FRONTEND_NAMESPACE}
-  namespace: ${ARGOCD_NAMESPACE}
-spec:
-  # 说明
-  description: Project for frontend applications
-  # 允许的集群
-  destinations:
-    # 允许的命名空间
-    - name: ${FRONTEND_PROJECT_NAME}
-      namespace: "${FRONTEND_NAMESPACE}"
-      # 集群地址
-      server: ${CLUSTER_SERVER}
-    - name: ${BACKEND_PROJECT_NAME}
-      namespace: "{BACKEND_NAMESPACE}"
-      # 集群地址
-      server: ${CLUSTER_SERVER}
-  # 允许的目标 K8s 资源类型
-  clusterResourceWhitelist:
-    - group: '*'
-      #kind: '*'
-      kind: Namespace
-  # Allow all namespaced-scoped resources to be created, except for ResourceQuota, LimitRange, NetworkPolicy
-  #namespaceResourceBlacklist:
-  #  - group: ''
-  #    kind: ResourceQuota
-  #  - group: ''
-  #    kind: LimitRange
-  #  - group: ''
-  #    kind: NetworkPolicy
-  # Deny all namespaced-scoped resources from being created, except for Deployment and StatefulSet
-  #namespaceResourceWhitelist:
-  #  - group: 'apps'
-  #    kind: Deployment
-  #  - group: 'apps'
-  #    kind: StatefulSet
-  sourceRepos:
-    - "*"
-  roles:
-    - name: ${ROLE_NAME}
-      description: Access role for ROLE_NAME user
-      policies:
-        - p, proj:default:${ROLE_NAME}, applications, *, ${FRONTEND_PROJECT_NAME}/*, allow
-        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, get, ${FRONTEND_PROJECT_NAME}/*, allow
-        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, create, ${FRONTEND_PROJECT_NAME}/*, allow
-        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, sync, ${FRONTEND_PROJECT_NAME}/*, allow
-        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, delete, ${FRONTEND_PROJECT_NAME}/*, allow
-        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, repositories, *, ${FRONTEND_PROJECT_NAME}/*, allow
-        - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${FRONTEND_PROJECT_NAME}/*, allow
-  orphanedResources:
-    warn: true
-# kubectl apply -f project-app.yml
+# argocd app create -f create-backend-app.yml
+# kubectl create -f create-backend-app.yml
 EOF
