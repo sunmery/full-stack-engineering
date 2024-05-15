@@ -155,7 +155,7 @@ job_backend_build:
     - docker tag $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION
     - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$TAG_VERSION
   after_script:
-    - docker images
+    - docker images || true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
 
