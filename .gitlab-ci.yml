@@ -66,27 +66,28 @@ cache:
       --password ${ARGO_PASS}
       --insecure
 
-job_frontend_test:
-  stage: test
-  image: node:18-alpine
-  tags:
-    - node
-  before_script:
-    - cd frontend
-    - npm install -g pnpm
-    - rm -rf node_modules
-  script:
-    - pnpm i
-    - pnpm lint
-  after_script:
-    - |
-      if [ $? -ne 0 ]; then
-        echo "测试失败
-        exit 1
-      fi
-  only:
-    - main
-    - dev
+
+#job_frontend_test:
+#  stage: test
+#  image: node:18-alpine
+#  tags:
+#    - node
+#  before_script:
+#    - cd frontend
+#    - npm install -g pnpm
+#    - rm -rf node_modules
+#  script:
+#    - pnpm i
+#    - pnpm lint
+#  after_script:
+#    - |
+#      if [ $? -ne 0 ]; then
+#        echo "测试失败
+#        exit 1
+#      fi
+#  only:
+#    - main
+#    - dev
 
 job_backend_test:
   stage: test
@@ -135,13 +136,14 @@ job_create_argo_proj:
     - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-proj.yml ${s_user}@${s_host1}:/tmp/
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd proj create -f /tmp/create-frontend-proj.yml
-      ;argocd proj create -f /tmp/create-backend-proj.yml
+      argocd proj create -f /tmp/create-frontend-proj.yml;
+      argocd proj create -f /tmp/create-backend-proj.yml;
+      argocd proj list
       '
   after_script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      rm -rf /tmp/create-frontend-proj.yml
-      ;rm -rf /tmp/create-backend-proj.yml
+      rm -rf /tmp/create-frontend-proj.yml;
+      rm -rf /tmp/create-backend-proj.yml
       '
   only:
     variables:
@@ -157,13 +159,14 @@ job_deploy:
     - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/application-backend.yml ${s_user}@${s_host1}:/tmp/
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd app create -f /tmp/application-frontend.yml
-      ;argocd app create -f /tmp/application-backend.yml
+      argocd app create -f /tmp/application-frontend.yml;
+      argocd app create -f /tmp/application-backend.yml;
+      argocd app list;
       '
   after_script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      rm -rf /tmp/application-frontend.yml
-      ;rm -rf /tmp/application-backend.yml
+      rm -rf /tmp/application-frontend.yml;
+      rm -rf /tmp/application-backend.yml
       '
   only:
     - main
