@@ -9,7 +9,7 @@ unset BRANCH
 unset PROJECT_GIT_URL
 
 # argocd所在的的命名空间
-export ARGOCD_NAMESPACE="argocd"
+export ARGOCD_NAMESPACE="argo"
 # 角色名称, 用于管理项目
 export ROLE_NAME="lx"
 # Kubernetes集群地址

@@ -132,17 +132,24 @@ job_backend_build:
     - main
     - dev
 
-#job_deploy:
-#  stage: deploy
-#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-#  only:
-#    - main
-#
-#  script:
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      argocd login ${ARGO_SERVER} --username ${ARGO_USER} --password ${ARGO_PASS},. --insecure;
-#      argocd create -f /tmp/application-frontend.yml
-#      '
+job_deploy:
+  stage: deploy
+  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+  before_script:
+    - >
+      argocd login ${ARGO_SERVER} 
+      --username ${ARGO_USER} 
+      --password ${ARGO_PASS}
+      --insecure
+  script:
+    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+      argocd login ${ARGO_SERVER} --username ${ARGO_USER} --password ${ARGO_PASS},. --insecure;
+      argocd create -f /tmp/application-frontend.yml
+      '
+  only:
+    - main
+    - dev
+
 #job_deploy:
 #  stage: deploy
 #  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
