@@ -63,21 +63,6 @@ cache:
   paths:
     - frontend/node_modules
 
-# Docker登录模板
-.docker_login_template:
-  #  variables:
-  #    FF_NETWORK_PER_BUILD: "true"
-  # 建议与你注册Runner选择的Docker镜像一致
-  image: ${DOCKER_TAG}
-  services:
-    # 建议与你注册Runner选择的Docker镜像一致
-    - ${DOCKER_TAG}
-  before_script:
-    - echo "正在查看Docker 信息"
-    - docker info
-    - echo "正在登录到远程注册表"
-    - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
-
 # argocd登录模板
 .argocd_login_template:
   before_script:
@@ -130,9 +115,18 @@ cache:
 
 job_backend_build:
   stage: build
-  extends:
-    - .docker_login_template
+  #  variables:
+  #    FF_NETWORK_PER_BUILD: "true"
+  # 建议与你注册Runner选择的Docker镜像一致
+  image: ${DOCKER_TAG}
+  services:
+    # 建议与你注册Runner选择的Docker镜像一致
+    - ${DOCKER_TAG}
   before_script:
+    - echo "正在查看Docker 信息"
+    - docker info
+    - echo "正在登录到远程注册表"
+    - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
     - |
       if [ -n "$TAG_VERSION" ]; then
         echo "Git Tag版本号为: $TAG_VERSION"
