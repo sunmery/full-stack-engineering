@@ -30,15 +30,6 @@ export FRONTEND_APPLICATION_NAME="react"
 # Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
 export FRONTEND_DEPLOY_PATH="https://gitlab.com/lookeke/manifests/-/blob/main/full-stack-engineering/frontend"
 
-# 后端端命名空间, 不需要额外创建命名空间选择default即可
-export BACKEND_NAMESPACE="backend"
-# argocd中的后端项目名, 用于分配团队人员的操作权限
-export BACKEND_PROJECT_NAME="backend"
-# 后端应用的名称
-export BACKEND_APPLICATION_NAME="go"
-# Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
-export BACKEND_DEPLOY_PATH="https://gitlab.com/lookeke/manifests/-/blob/main/full-stack-engineering/backend"
-
 # 获取Git Repo URL
 if [ -z "$BRANCH" ]; then
   echo "用户未设置Git Repo URL, 尝试自动获取"
@@ -58,39 +49,6 @@ if [ -z "$PROJECT_GIT_URL" ]; then
       exit 1
   fi
 fi
-
-# 创建argocd的Project(项目)的Role(角色)
-cat > project-role.yml <<EOF
-#  创建角色
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-cm
-  namespace: ${ARGOCD_NAMESPACE}
-data:
-  accounts.${ROLE_NAME}: "apiKey, login"
-# kubectl apply -f argocd-cm.yaml -n ${ARGOCD_NAMESPACE}
-EOF
-
-# 给Role分配Project的权限
-cat > project-rbac.yml <<EOF
-# 分配角色给 frontend-group 前端组 和 backend-group 后端组
-# 并具有适当的权限
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-rbac-cm
-  namespace: ${ARGOCD_NAMESPACE}
-data:
-  policy.csv: |
-    p, role:admin, applications, *, *, allow
-    p, role:${ROLE_NAME}, applications, *, *, allow
-    g, admin, role:admin
-    g, ${ROLE_NAME}, proj:frontend:${ROLE_NAME}
-    g, ${ROLE_NAME}, proj:backend:${ROLE_NAME}
-# kubectl apply -f argocd-rbac-cm -n ${ARGOCD_NAMESPACE}
-EOF
 
 cat > create-frontend-proj.yml <<EOF
 apiVersion: argoproj.io/v1alpha1
@@ -156,7 +114,7 @@ spec:
 EOF
 
 # 创建前端项目应用
-cat > create-backend-app.yml <<EOF
+cat > create-frontend-app.yml <<EOF
 apiVersion: argoproj.io/v1alpha1  # 指定 Argo CD API 版本
 kind: Application  # 定义资源类型为 Application
 metadata: # 元数据部分
@@ -171,7 +129,7 @@ spec: # 规范部分
   project: ${FRONTEND_PROJECT_NAME}  # 应用程序将被配置的项目名称，这是在 Argo CD 中应用程序的一种组织方式
   source: # 指定源
     # Kubernetes 资源清单在仓库中的路径
-    path: ${BACKEND_DEPLOY_PATH}
+    path: ${FRONTEND_DEPLOY_PATH}
     # 指定 Git 仓库的 URL
     repoURL: ${PROJECT_GIT_URL}
     # 使用的 git 分支
@@ -194,6 +152,6 @@ spec: # 规范部分
         duration: 10s  # 初始重试间隔
         factor: 2  # 重试间隔因子
         maxDuration: 3m  # 最大重试间隔
-# argocd app create -f create-backend-app.yml
-# kubectl create -f create-backend-app.yml
+# argocd app create -f create-frontend-app.yml
+# kubectl create -f create-frontend-app.yml
 EOF
