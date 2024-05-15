@@ -120,7 +120,7 @@ job_backend_build:
   script:
     - docker info || true # 验证 Docker 是否正常工作
     - docker version || true
-    - docker login  $REGISTER_ADDRESS -u $REGISTER_USERNAME --password $REGISTER_PASSWORD
+    - docker login  $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
     - docker build -t $IMAGE_TAG:$VERSION -f backend/Dockerfile .
     - docker tag $IMAGE_TAG:$VERSION $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
     - docker push $REGISTER_ADDRESS/$REGISTER_REPO/$PROJECT_NAME_SERVER:$VERSION
