@@ -36,6 +36,8 @@ export BACKEND_NAMESPACE="backend"
 export BACKEND_PROJECT_NAME="backend"
 # 后端应用的名称
 export BACKEND_APPLICATION_NAME="go"
+# Kubernetes 资源清单在仓库中的路径, 相对于仓库根目录的路径
+export BACKEND_DEPLOY_PATH="backend/ci"
 
 # 获取Git Repo URL
 if [ -z "$BRANCH" ]; then
@@ -98,46 +100,37 @@ metadata:
   namespace: ${ARGOCD_NAMESPACE} # 项目所在的命名空间，默认为argocd，可根据实际情况调整
 spec:
   # 项目描述
-  description: "This project is for managing frontend applications"
+  description: "This project is for managing FRONTEND applications"
 
   # 允许应用部署到的命名空间列表
   destinations:
   - namespace: ${FRONTEND_NAMESPACE}
     server: ${CLUSTER_SERVER} # 集群API地址，示例值需替换为实际地址
 
-  # 源代码仓库配置
-  sourceRepos:
-  - ${PROJECT_GIT_URL} # 允许使用的Git仓库地址，根据实际情况修改
+  # 允许的目标 K8s 资源类型
+  clusterResourceWhitelist:
+    - group: '*'
+      #kind: '*'
+      kind: Namespace
 
-  # 角色与成员
-  roles:
-    - name: ${ROLE_NAME} # 角色名称
-      policies:
-      # 允许admin角色在frontend项目中对所有应用进行所有操作
-      - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, *, ${FRONTEND_PROJECT_NAME}/*, allow
-      # 允许查看frontend命名空间相关的集群信息
-      - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${FRONTEND_PROJECT_NAME}/*, allow
-
-  # 可选：项目默认值
-  # 这些默认值可以被应用级别的设置覆盖
-  # clusterResourceWhitelist, namespaceResourceBlacklist等可以根据需要添加
-EOF
-
-cat > create-backend-proj.yml <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: ${BACKEND_NAMESPACE} # 项目名称
-  namespace: ${ARGOCD_NAMESPACE} # 项目所在的命名空间，默认为argocd，可根据实际情况调整
-spec:
-  # 项目描述
-  description: "This project is for managing BACKEND applications"
-
-  # 允许应用部署到的命名空间列表
-  destinations:
-  - namespace: ${BACKEND_NAMESPACE}
-    server: ${CLUSTER_SERVER} # 集群API地址，示例值需替换为实际地址
-
+  # 允许创建所有命名空间范围的资源: ResourceQuota、LimitRange、NetworkPolicy 除外
+  namespaceResourceBlacklist:
+    - group: '*'
+      kind: ResourceQuota
+    - group: '*'
+      kind: LimitRange
+    - group: '*'
+      kind: NetworkPolicy
+  # 拒绝创建所有名称空间作用域的资源. 但除了以下的Kind除外:
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: Deployment
+    - group: '*'
+      kind: StatefulSet
+    - group: '*'
+      kind: Service
+    - group: '*'
+      kind: Namespace
   # 源代码仓库配置
   sourceRepos:
   - ${PROJECT_GIT_URL} # 允许使用的Git仓库地址，根据实际情况修改
@@ -145,15 +138,21 @@ spec:
   # 角色与成员
   roles:
   - name: ${ROLE_NAME} # 角色名称
-    # 注意这里的subjects配置应当符合Argo CD的RBAC规范，例如使用proj:backend:admin
+    description: Access role for ROLE_NAME user
+    # 注意这里的subjects配置应当符合Argo CD的RBAC规范，例如使用proj:FRONTEND:admin
     # 定义角色权限
     policies:
-    - p, proj:${BACKEND_PROJECT_NAME}:${ROLE_NAME}, applications, *, ${BACKEND_PROJECT_NAME}/*, allow # 允许admin角色在BACKEND项目中对所有应用进行所有操作
-    - p, proj:${BACKEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${BACKEND_PROJECT_NAME}/*, allow # 允许查看集群信息
-
-  # 可选：项目默认值
-  # 这些默认值可以被应用级别的设置覆盖
-  # clusterResourceWhitelist, namespaceResourceBlacklist等可以根据需要添加
+    # 允许 ROLE_NAME 角色对该命名空间下的项目进行: 获取/创建/同步/删除/操作
+    - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, get, ${FRONTEND_PROJECT_NAME}/*, allow
+    - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, create, ${FRONTEND_PROJECT_NAME}/*, allow
+    - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, sync, ${FRONTEND_PROJECT_NAME}/*, allow
+    - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, applications, delete, ${FRONTEND_PROJECT_NAME}/*, allow
+    # 允许查看集群信息
+    - p, proj:${FRONTEND_PROJECT_NAME}:${ROLE_NAME}, clusters, get, ${FRONTEND_PROJECT_NAME}/*, allow
+  orphanedResources:
+    warn: true
+# argocd proj create -f create-frontend-proj.yml
+# kubectl apply -f create-frontend-proj.yml
 EOF
 
 # 创建前端项目应用
@@ -172,7 +171,7 @@ spec: # 规范部分
   project: ${FRONTEND_PROJECT_NAME}  # 应用程序将被配置的项目名称，这是在 Argo CD 中应用程序的一种组织方式
   source: # 指定源
     # Kubernetes 资源清单在仓库中的路径
-    path: ${FRONTEND_DEPLOY_PATH}
+    path: ${BACKEND_DEPLOY_PATH}
     # 指定 Git 仓库的 URL
     repoURL: ${PROJECT_GIT_URL}
     # 使用的 git 分支

@@ -178,7 +178,7 @@ job_verify:
   before_script:
     - apk add curl
   script:
-    - curl -S https://${s_host1}
+    - curl -L https://${s_host1}
     - curl -L http://${s_host1}:30001/helloworld/lisa
     - curl -L http://${s_host1}:30002/helloworld/lisa
   only:
