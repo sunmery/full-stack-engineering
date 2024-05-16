@@ -5,12 +5,9 @@ ARG PACK_VERSION=latest
 ARG FRONTEND_PORT1=80
 ARG FRONTEND_PORT2=443
 ARG BUILD_DIR_NAME=dist
-ARG HUSKY=0
 
 FROM $NODE_VERSION AS builder
 # FROM node:slim 仅包含运行 node 所需的最小包
-#
-# 要依赖的node版本, 这里以node 18演示, 使用小体积的os系统alpine以减少构建的镜像大小
 
 WORKDIR /web
 
@@ -18,7 +15,7 @@ WORKDIR /web
 RUN cd /web
 
 # 默认使用生产环境
-ENV NODE_ENV production
+# ENV NODE_ENV production
 
 # 如果出现错误提示: 缺少使用 process.dlopen:
 # Alpine v3.18及更早版本:
@@ -31,7 +28,8 @@ RUN --mount=type=cache,target=/root/.npm \
     npm install -g pnpm@$PACK_VERSION && \
     pnpm -v
 
-COPY package.json pnpm.lock.yaml
+COPY package.json /web
+COPY pnpm.lock.yaml .
 
 # 安装依赖
 # --prod 仅下载生产环境的依赖
@@ -43,11 +41,13 @@ COPY package.json pnpm.lock.yaml
 # 下载依赖作为一个单独的步骤，以利用Docker的缓存。
 # 利用缓存挂载到/root/.local/share/pnpm/store加速后续构建。
 # 利用绑定挂载到 package.json 和 pnpm-lock.yaml 以避免将它们复制到这个layer。
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
-    --mount=type=cache,target=/root/.local/share/pnpm/store \
-    HUSKY=$HUSKY pnpm install --frozen-lockfile
 
+# --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
+# RUN --mount=type=bind,source=package.json,target=package.json \
+#     --mount=type=cache,target=/root/.local/share/pnpm/store \
+#     HUSKY=0 pnpm install --frozen-lockfile
+
+RUN HUSKY=0 pnpm install
 COPY . .
 
 # 打包

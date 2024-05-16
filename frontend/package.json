@@ -20,7 +20,7 @@
     "stylelint:fix": "stylelint **/**.{css,scss,sass} --fix",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 8080",
     "tauri": "tauri",
     "commitlint": "commitlint --edit"
   },
@@ -29,6 +29,7 @@
     "@emotion/styled": "^11.11.5",
     "@mui/joy": "5.0.0-beta.36",
     "@tauri-apps/api": "^1",
+    "@vitejs/plugin-react": "^4.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "vite": "^5.1.6"
@@ -46,7 +47,7 @@
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
     "commitlint": "^19.2.0",
     "eslint": "^8.57.0",
     "eslint-config-alloy": "^5.1.2",

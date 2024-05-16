@@ -34,8 +34,6 @@ variables:
   FRONTEND_PORT1: 80
   FRONTEND_PORT2: 443
   BUILD_DIR_NAME: dist
-  # 不在CI中使用husky: https://typicode.github.io/husky/how-to.html#ci-server-and-docker
-  HUSKY: 0
 
   # 后端项目相关配置:
   # 作者/组织
@@ -160,7 +158,6 @@ job_frontend_build:
       --build-arg FRONTEND_PORT1=${FRONTEND_PORT1}
       --build-arg FRONTEND_PORT2=${FRONTEND_PORT2}
       --build-arg BUILD_DIR_NAME=${BUILD_DIR_NAME}
-      --build-arg HUSKY=${HUSKY}
     - docker tag $FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION $REGISTER_ADDRESS/$FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION
     - docker push $REGISTER_ADDRESS/$FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION
   rules:
