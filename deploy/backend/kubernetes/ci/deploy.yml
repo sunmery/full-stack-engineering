@@ -1,0 +1,60 @@
+# 命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend
+---
+# 部署清单
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: http
+          image: ccr.ccs.tencentyun.com/lisa/backend:v0.2.7
+          ports:
+            - containerPort: 30001
+        - name: grpc
+          image: ccr.ccs.tencentyun.com/lisa/backend:v0.2.7
+          ports:
+            - containerPort: 30002
+          volumeMounts:
+            - name: kratos-config
+              mountPath: /data/conf
+      volumes:
+        - name: kratos-config
+          configMap:
+            # 提供包含要添加到容器中的文件的 ConfigMap 的名称
+            name: kratos-config
+      restartPolicy: Always
+---
+# 服务清单
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 30001
+      targetPort: 30001
+    - name: grpc
+      protocol: TCP
+      port: 30002
+      targetPort: 30002
+  type: LoadBalancer

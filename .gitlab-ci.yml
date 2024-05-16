@@ -1,11 +1,12 @@
 stages:
   - init
-  - test
   - build
+  - test
   - manifests
   - deploy
   - verify
 
+# 变量列表
 variables:
   # 初始化相关配置:
   # 是否需要初始化web, 初始化的工作包含拉取和构建运行Web应用的镜像
@@ -23,11 +24,17 @@ variables:
 
   # 前端项目相关配置:
   # 作者/组织
-  PROJECT_PROJECT_AUTHORS: lisa
+  FRONTEND_PROJECT_AUTHORS: lisa
   # 前端端项目名称
-  FRONTEN_PROJECT_NAME: frontend
+  FRONTEND_PROJECT_NAME: frontend
   # 版本号, 例如v1.0.0, latest, 这里使用了git tag <VERSION> 作为版本号, CI_COMMIT_TAG是gitlab ci内置命令
   FRONTEN_VERSION: ${CI_COMMIT_TAG}
+  # 构建Node的版本
+  NODE_VERSION: "20.11.0-alpine"
+  PACK: pnpm
+  FRONTEND_PORT1: 80
+  FRONTEND_PORT2: 443
+  BUILD_DIR_NAME: dist
 
   # 后端项目相关配置:
   # 作者/组织
@@ -38,9 +45,9 @@ variables:
   # 版本号, 例如v1.0.0, latest, 这里使用了git tag <VERSION> 作为版本号, CI_COMMIT_TAG是gitlab ci内置命令
   BACKEND_VERSION: ${CI_COMMIT_TAG}
   # HTTP端口
-  PORT1: 30001
+  BACKEND_PORT1: 30001
   # gRPC端口
-  PORT2: 30002
+  BACKEND_PORT2: 30002
   # 使用的镜像, 除了dockerhub之外的镜像都需要添加供应商前缀
   GO_IMAGE: golang:1.22.2-alpine3.19
   # 构建的目标平台架构
@@ -59,10 +66,32 @@ variables:
   # 这指示Docker不要重新启动TLS。如果远程注册表不是HTTPS, 就填写
   DOCKER_TLS_CERTDIR: ""
 
+# 缓存机制
 cache:
   key: nginx-quic
   paths:
     - frontend/node_modules
+
+# Docker登录模板
+.docker_login_template:
+  # 建议与你注册Runner选择的Docker镜像一致
+  image: ${DOCKER_TAG}
+  services:
+    # 建议与你注册Runner选择的Docker镜像一致
+    - ${DOCKER_TAG}
+  before_script:
+    - echo "正在查看Docker 信息"
+    - docker info
+    - echo "正在登录到远程注册表"
+    - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
+    - |
+      if [ -n "$BACKEND_VERSION" ]; then
+        echo "Git Tag版本号为: $BACKEND_VERSION"
+      else
+        echo "没有设置Tag版本号, 默认设置为 dev"
+        export BACKEND_VERSION="dev"
+      fi
+    - echo $BACKEND_VERSION
 
 # argocd登录模板
 .argocd_login_template:
@@ -74,6 +103,8 @@ cache:
       --password ${ARGO_PASS}
       --insecure
 
+
+# 前端模块测试
 #job_frontend_test:
 #  stage: test
 #  image: node:18-alpine
@@ -93,9 +124,10 @@ cache:
 #        exit 1
 #      fi
 
+# 后端模块测试
 job_backend_test:
   stage: test
-  image: golang:1.22.2-alpine3.19
+  image: ${GO_IMAGE}
   tags:
     - ${BACKEND_TAG}
   before_script:
@@ -112,26 +144,34 @@ job_backend_test:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
+# 构建前端容器镜像
+job_frontend_build:
+  stage:
+    - build
+  extends:
+    - .docker_login_template
+  script:
+    - >
+      docker build
+      -t $FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION
+      -f ${FRONTEND_PROJECT_NAME}/Dockerfile ${FRONTEND_PROJECT_NAME}
+      --build-arg NODE_VERSION=${NODE_VERSION}
+      --build-arg PACK=${PACK}
+      --build-arg PACK_VERSION=${PACK_VERSION}
+      --build-arg FRONTEND_PORT1=${FRONTEND_PORT1}
+      --build-arg FRONTEND_PORT2=${FRONTEND_PORT2}
+      --build-arg BUILD_DIR_NAME=${BUILD_DIR_NAME}
+    - docker tag $FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION $REGISTER_ADDRESS/$FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION
+    - docker push $REGISTER_ADDRESS/$FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
+
+# 构建后端容器镜像
 job_backend_build:
   stage: build
-  # 建议与你注册Runner选择的Docker镜像一致
-  image: ${DOCKER_TAG}
-  services:
-    # 建议与你注册Runner选择的Docker镜像一致
-    - ${DOCKER_TAG}
-  before_script:
-    - echo "正在查看Docker 信息"
-    - docker info
-    - echo "正在登录到远程注册表"
-    - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
-    - |
-      if [ -n "$BACKEND_VERSION" ]; then
-        echo "Git Tag版本号为: $BACKEND_VERSION"
-      else
-        echo "没有设置Tag版本号, 默认设置为 dev"
-        export BACKEND_VERSION="dev"
-      fi
-    - echo $BACKEND_VERSION
+  extends:
+    - .docker_login_template
   script:
     - >
       docker build
@@ -141,14 +181,15 @@ job_backend_build:
       --build-arg ARCH=${ARCH}
       --build-arg CGO_ENABLED=${CGO_ENABLED}
       --build-arg UID=${UID}
-      --build-arg PORT1=${PORT1}
-      --build-arg PORT2=${PORT2}
+      --build-arg BACKEND_PORT1=${BACKEND_PORT1}
+      --build-arg BACKEND_PORT2=${BACKEND_PORT2}
     - docker tag $BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
     - docker push $REGISTER_ADDRESS/$BACKEND_PROJECT_AUTHORS/$BACKEND_PROJECT_NAME:$BACKEND_VERSION
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
+# 初始化argocd项目
 job_create_argo_proj:
   stage: init
   image: ccr.ccs.tencentyun.com/lisa/alpine:latest
@@ -172,7 +213,8 @@ job_create_argo_proj:
     - if: '$BACKEND_INIT == "true"'
       when: always
 
-job_manifests:
+# 推送部署清单, 让argocd拉取
+job_push_manifests:
   stage: manifests
   image: ccr.ccs.tencentyun.com/lisa/alpine:git
   before_script:
@@ -208,6 +250,7 @@ job_manifests:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
+# 部署前后端项目
 job_deploy:
   stage: deploy
   image: ccr.ccs.tencentyun.com/lisa/alpine:latest
@@ -231,15 +274,26 @@ job_deploy:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
 
+# 验证阶段
 job_verify:
   stage: verify
   image: ccr.ccs.tencentyun.com/lisa/alpine
   before_script:
     - apk add curl
   script:
+    - echo "访问前端网站"
     - curl -L https://${s_host1}
-    - curl -L http://${s_host1}:30001/helloworld/lisa
-    - curl -L http://${s_host1}:30002/helloworld/lisa
+    # TODO 编写等待Kubernetes资源准备好接受流量时才进行请求
+    - echo "访问后端暴露的HTTP健康检查接口检测它的响应码是否为200"
+    - http_code=$(curl -s -o /dev/null -w "%{http_code}" http://${s_host1}:${BACKEND_PORT1}/helloworld/lisa)
+    - |
+      if [ curl $http_code -eq 200 ]; then
+        echo "HTTP的响应成功"
+      else
+        echo "HTTP请求失败"
+      fi
+  after_script:
+    - curl http://${s_host1}:${BACKEND_PORT1}/helloworld/lisa
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always

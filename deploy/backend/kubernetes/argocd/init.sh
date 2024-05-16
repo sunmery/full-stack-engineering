@@ -19,8 +19,7 @@ export CLUSTER_SERVER="https://192.168.2.160:6443"
 # 仓库URL
 export BRANCH="main"
 # 仓库地址
-#export PROJECT_GIT_URL="https://gitlab.com/lookeke/manifests.git"
-export PROJECT_GIT_URL="http://192.168.2.158:7080/root/manifests.git"
+export PROJECT_GIT_URL="https://gitlab.com/lookeke/manifests.git"
 
 # 后端端命名空间, 不需要额外创建命名空间选择default即可
 export BACKEND_NAMESPACE="backend"
