@@ -1,5 +1,5 @@
 {
-	"dependencies": {
+	"devDependencies": {
 		"husky": "^9.0.11"
 	}
 }
