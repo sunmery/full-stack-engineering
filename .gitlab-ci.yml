@@ -22,7 +22,7 @@ variables:
   # 运行Docker的runner tag
   DOCKER_TAG: docker:26.1.0-dind-alpine3.19
   # shell程序的runner tag
-  SHELL_TAG: shell
+  SHELL_TAG: shell_alpine
 
   # 前端项目相关配置:
   # 作者/组织
@@ -105,7 +105,6 @@ cache:
       --username ${ARGO_USER} 
       --password ${ARGO_PASS}
       --insecure
-
 
 # 前端模块测试
 job_frontend_test:
@@ -252,23 +251,37 @@ job_deploy:
   image: ccr.ccs.tencentyun.com/lisa/alpine:latest
   extends:
     - .argocd_login_template
-  before_script:
-    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-app.yml ${s_user}@${s_host1}:/tmp/
-    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-app.yml ${s_user}@${s_host1}:/tmp/
   script:
-    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd app create -f /tmp/create-frontend-app.yml;
-      argocd app create -f /tmp/create-backend-app.yml;
-      argocd app list;
-      '
+    - argocd app create -f /tmp/create-frontend-app.yml
+    - argocd app create -f /tmp/create-backend-app.yml
   after_script:
-    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      rm -rf /tmp/application-frontend.yml;
-      rm -rf /tmp/application-backend.yml
-      '
+    - rm -rf /tmp/application-frontend.yml
+    - rm -rf /tmp/application-backend.yml
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always
+#job_deploy:
+#  stage: deploy
+#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+#  extends:
+#    - .argocd_login_template
+#  before_script:
+#    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-app.yml ${s_user}@${s_host1}:/tmp/
+#    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-app.yml ${s_user}@${s_host1}:/tmp/
+#  script:
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      argocd app create -f /tmp/create-frontend-app.yml;
+#      argocd app create -f /tmp/create-backend-app.yml;
+#      argocd app list;
+#      '
+#  after_script:
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      rm -rf /tmp/application-frontend.yml;
+#      rm -rf /tmp/application-backend.yml
+#      '
+#  rules:
+#    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+#      when: always
 
 # 验证阶段
 job_verify:
