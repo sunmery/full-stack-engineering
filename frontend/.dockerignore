@@ -1,6 +1,5 @@
-node_modules
-package-lock.json
-dist
 .github
-.husky
+.vscode
+dist
+node_modules
 src-tauri

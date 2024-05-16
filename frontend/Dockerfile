@@ -2,12 +2,16 @@
 
 ARG NODE_VERSION=20.11.0-alpine
 ARG PACK=pnpm
-ARG PACK_VERSION=9.1.0
+# ARG PACK_VERSION=9.1.0
+ARG PACK_VERSION=latest
 ARG FRONTEND_PORT1=80
 ARG FRONTEND_PORT2=443
 ARG BUILD_DIR_NAME=dist
 
-FROM node:${NODE_VERSION}
+FROM node:${NODE_VERSION} AS builder
+
+WORKDIR /usr/src/app
+COPY . /usr/src/app
 
 # Use production node environment by default.
 ENV NODE_ENV production
@@ -21,23 +25,25 @@ ENV NODE_ENV production
 # 可选, 如果你的服务器环境的npm下不动依赖包, 尝试使用大陆proxy
 RUN npm config set registry https://registry.npmmirror.com
 
+RUN ls
+RUN pwd
+
 # Install pnpm.
 RUN --mount=type=cache,target=/root/.npm \
-  npm install -g ${PACK}@${PNPM_VERSION}
+#   npm install -g ${PACK}@${PNPM_VERSION}
+  npm install -g pnpm@latest
 
 # 验证 pnpm安装与否
 RUN pnpm -v
 
-WORKDIR /usr/src/app
-
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.local/share/pnpm/store to speed up subsequent builds.
-# Leverage a bind mounts to package.json and pnpm-lock.yaml to avoid having to copy them into
-# into this layer.
+# 下载依赖作为一个单独的步骤，以利用Docker的缓存。
+# 利用缓存挂载到/root/Local /share/pnpm/store加速后续构建。
+# 利用绑定挂载到包。Json和pnpm-lock。以避免将它们复制到这个layer。
 RUN --mount=type=bind,source=package.json,target=package.json \
   --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
   --mount=type=cache,target=/root/.local/share/pnpm/store \
-  pnpm install --prod --frozen-lockfile
+#   pnpm install --prod --frozen-lockfile
+  pnpm install
 
 # 打包
 RUN pnpm build
@@ -72,3 +78,22 @@ EXPOSE ${FRONTEND_PORT2}
 
 # 运行 nginx 服务
 CMD ["nginx", "-g", "daemon off;"]
+
+# 执行打包
+# --progress=plain: 构建过程中显示的详细信息的格式
+# --no-cache: 不使用缓存
+# -t: 标签, 例如: lisa/frontend:v2
+# frontend/ : 构建的目录, 相对于Dockerfile的路径, 与Docker相同的目录使用 . 表示当前目录
+# -f frontend/Dockerfile: 相对路径, 指定Dockerfile的路径
+# docker build --progress=plain --no-cache -t lisa/frontend:v2 frontend/ -f frontend/Dockerfile
+
+# 运行示例
+# docker run -itd \
+# --name nginx-quic \
+# -v /home/nginx/html:/etc/nginx/html \
+# -v /home/nginx/conf:/etc/nginx/conf.d \
+# -v /home/nginx/ssl:/etc/nginx/ssl \
+# -p '443:443/tcp' \
+# -p '443:443/udp' \
+# -p 80:80 \
+# ccr.ccs.tencentyun.com/lisa/frontend:v2
