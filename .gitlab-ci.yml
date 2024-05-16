@@ -146,8 +146,7 @@ job_backend_test:
 
 # 构建前端容器镜像
 job_frontend_build:
-  stage:
-    - build
+  stage: build
   extends:
     - .docker_login_template
   script:
