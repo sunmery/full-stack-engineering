@@ -146,23 +146,23 @@ chmod +x kubernetes/argocd/init.sh
 
 - 本地运行
 
-```shell
-pnpm dev
-```
+    ```shell
+    pnpm dev
+    ```
 
 - 运行Web桌面应用
 
-> 构建桌面应用需要Rust环境
+  > 构建桌面应用需要Rust环境
 
-```shell
-pnpm tauri dev
-```
+    ```shell
+    pnpm tauri dev
+    ```
 
 - 打包
 
-```shell
-pnpm build
-```
+    ```shell
+    pnpm build
+    ```
 
 - 构建Web桌面应用
 
@@ -172,13 +172,13 @@ pnpm build
 值改为:""com.tauri.build""
 原来的值:
 
-```json
-{
+ ```json
+ {
   "bundle": {
     "identifier": "com.tauri.dev"
   }
 }
-```
+ ```
 
 修改后的值:
 
@@ -231,11 +231,38 @@ kratos new <path>/<project> [-r <https://xxx.git>] [-b <brach>] [--nomod]
 
 [DevOps工程化](https://juejin.cn/post/7346610589987569664)有详细说明, 这里是简化说明
 
-### Kubernetes
+### 前端
 
-#### 前端
+#### Kubernetes
 
-修改`deploy.yml`,把`spec.template.spec.containers.image`字段替换成你的镜像URL地址, 例如`https://example.com/v2/web`
+#### Docker
+
+#### 二进制
+
+查看项目根目录的 `deploy/frontend/binary` 定义以下变量:
+
+- DOMAIN: 域名, example.com, 不需要schema
+- NGINX_DIR: 存储nginx的绝对路径
+- HTML_DIR: 网页文件目录
+- CONF_DIR: 配置文件目录
+- SSL_DIR: TLS文件目录
+
+```shell
+export DOMAIN=""
+export NGINX_DIR=""
+export HTML_DIR=""
+export CONF_DIR=""
+export SSL_DIR=""
+```
+
+然后执行:
+
+```shell
+chmod +x ./deploy/frontend/binary/00-install.sh;./deploy/frontend/binary/00-install.sh 
+chmod +x ./deploy/frontend/binary/01-create_systemd.sh;./deploy/frontend/binary/01-create_systemd.sh 
+chmod +x ./deploy/frontend/binary/02-create_user.sh;./deploy/frontend/binary/02-create_user.sh 
+chmod +x ./deploy/frontend/binary/03-start_nginx.sh;./deploy/frontend/binary/03-start_nginx.sh 
+```
 
 #### 后端
 

@@ -32,6 +32,12 @@ if [ -z "${SSL_DIR}" ]; then
     #exit 1
 fi
 
+# export DOMAIN="example.com"
+# export NGINX_DIR=""
+# export HTML_DIR=""
+# export CONF_DIR=""
+# export SSL_DIR=""
+
 echo "用户定义的变量:"
 echo "DOMAIN: ${DOMAIN}"
 echo "NGINX_DIR: ${NGINX_DIR}"
