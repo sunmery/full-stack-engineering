@@ -28,7 +28,7 @@ variables:
   # 前端端项目名称
   FRONTEND_PROJECT_NAME: frontend
   # 版本号, 例如v1.0.0, latest, 这里使用了git tag <VERSION> 作为版本号, CI_COMMIT_TAG是gitlab ci内置命令
-  FRONTEN_VERSION: ${CI_COMMIT_TAG}
+  FRONTEND_VERSION: ${CI_COMMIT_TAG}
   # 构建Node的版本
   NODE_VERSION: "20.11.0-alpine"
   PACK: pnpm
