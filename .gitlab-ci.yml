@@ -115,7 +115,8 @@ cache:
 #    - rm -rf node_modules
 #  script:
 #    - pnpm i
-#    - pnpm lint
+#    - pnpm eslint:fix
+#    - pnpm stylelint:fix
 #  after_script:
 #    - |
 #      if [ $? -ne 0 ]; then
@@ -151,6 +152,7 @@ job_frontend_build:
   script:
     - >
       docker build
+      --progress=plain
       -t $FRONTEND_PROJECT_AUTHORS/$FRONTEND_PROJECT_NAME:$FRONTEND_VERSION
       -f ${FRONTEND_PROJECT_NAME}/Dockerfile ${FRONTEND_PROJECT_NAME}
       --build-arg NODE_VERSION=${NODE_VERSION}

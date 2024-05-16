@@ -1,6 +1,7 @@
 import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
-import basicSsl from '@vitejs/plugin-basic-ssl'
+// import basicSsl from '@vitejs/plugin-basic-ssl'
+
 /**
  * @description
  * @param command { "build" | "server" } 模式
@@ -15,14 +16,14 @@ export default defineConfig(async ({command}) => {
 			// dev 独有配置
 			plugins: [
 				react(),
-				basicSsl({
-					/** name of certification */
-					name: 'test',
-					/** custom trust domains */
-					domains: ['*.custom.com'],
-					/** custom certification directory */
-					certDir: '/Users/.../.devServer/cert',
-				}),
+				// 				basicSsl({
+				// 					/** name of certification */
+				// 					name: 'test',
+				// 					/** custom trust domains */
+				// 					domains: ['*.custom.com'],
+				// 					/** custom certification directory */
+				// 					certDir: '/Users/.../.devServer/cert',
+				// 				}),
 			],
 
 			// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
@@ -43,7 +44,6 @@ export default defineConfig(async ({command}) => {
 	} else {
 		return {
 			// build 独有配置
-			plugins: [react()],
 			// 开发或生产环境服务的公共基础路径。合法的值包括以下几种：
 			// 绝对 URL 路径名，例如 /foo/
 			// 完整的 URL，例如 https://foo.com/（原始的部分在开发环境中不会被使用）
@@ -54,6 +54,26 @@ export default defineConfig(async ({command}) => {
 				host: '0.0.0.0',
 				port: 443,
 				strictPort: true,
+			},
+			assetsDir: 'public',
+			chunkSizeWarningLimit: 1000,
+			// 配置打包文件路径和命名
+			minify: 'esbuild',
+			outDir: 'dist',
+			// 取消计算文件大小，加快打包速度
+			reportCompressedSize: false,
+			sourcemap: false,
+			target: 'esnext',
+			terserOptions: {
+				compress: {
+					// 生产环境时移除console.log调试代码
+					drop_console: true,
+					drop_debugger: true,
+				},
+			},
+			rollupOptions: {
+				// // 打包时忽略某些包，避免打包时间过长
+				// 				external: ['react'],
 			},
 		}
 	}

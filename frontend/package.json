@@ -9,7 +9,7 @@
     "*.{ts,tsx,js,jsx,cjs,mjs}": "prettier --write"
   },
   "scripts": {
-    "prepare": "cd .. && husky frontend/.husky",
+    "prepare": "cd .. && husky ./frontend/.husky || true",
     "prettier:check": "prettier --check src/**/**{.cjs,.mjs,.ts,.tsx,.html,.md}",
     "prettier:write": "prettier --write src/**/**{.cjs,.mjs,.ts,.tsx,.html,.md}",
     "lint": "lint-staged",
@@ -29,10 +29,10 @@
     "@emotion/styled": "^11.11.5",
     "@mui/joy": "5.0.0-beta.36",
     "@tauri-apps/api": "^1",
-    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.6",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "vite": "^5.1.6"
+    "@vitejs/plugin-react": "^4.2.1",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

@@ -15,7 +15,7 @@ WORKDIR /web
 RUN cd /web
 
 # 默认使用生产环境
-# ENV NODE_ENV production
+ENV NODE_ENV production
 
 # 如果出现错误提示: 缺少使用 process.dlopen:
 # Alpine v3.18及更早版本:
@@ -25,15 +25,9 @@ RUN cd /web
 
 # 缓存.npm依赖
 RUN --mount=type=cache,target=/root/.npm \
-    npm install -g pnpm@$PACK_VERSION && \
-    pnpm -v
+    npm install -g pnpm@$PACK_VERSION
 
-COPY package.json /web
-COPY pnpm.lock.yaml .
-
-# 安装依赖
-# --prod 仅下载生产环境的依赖
-# --frozen-lockfile 固定lock
+COPY package.json .
 
 # proxy
 # RUN pnpm config set registry https://registry.npmmirror.com
@@ -42,12 +36,15 @@ COPY pnpm.lock.yaml .
 # 利用缓存挂载到/root/.local/share/pnpm/store加速后续构建。
 # 利用绑定挂载到 package.json 和 pnpm-lock.yaml 以避免将它们复制到这个layer。
 
+# 安装依赖
+# pnpm --prod --frozen-lockfile
+# --prod 仅下载生产环境的依赖
+# --frozen-lockfile 固定lock
 # --mount=type=bind,source=pnpm-lock.yaml,target=pnpm-lock.yaml \
-# RUN --mount=type=bind,source=package.json,target=package.json \
-#     --mount=type=cache,target=/root/.local/share/pnpm/store \
-#     HUSKY=0 pnpm install --frozen-lockfile
+# --mount=type=bind,source=package.json,target=package.json \
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    HUSKY=0 pnpm i
 
-RUN HUSKY=0 pnpm install
 COPY . .
 
 # 打包
