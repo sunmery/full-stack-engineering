@@ -20,7 +20,7 @@ variables:
   # 运行后端的runner tag
   BACKEND_TAG: go
   # 运行Docker的runner tag
-  DOCKER_TAG: docker:26.1.0-dind-alpine3.19
+  DOCKER_TAG: docker_26.1.0_dind_alpine3.19
   # shell程序的runner tag
   SHELL_TAG: shell_alpine
 
@@ -118,6 +118,15 @@ job_frontend_test:
   script:
     - pnpm i
     - pnpm lint
+
+job_runner_test:
+  stage:
+    - test
+  tags:
+    - ${SHELL_TAG}
+  script:
+    - argocd version
+    - sshpass -V
 
 # 后端模块测试
 job_backend_test:
