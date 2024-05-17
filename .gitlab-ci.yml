@@ -105,9 +105,9 @@ cache:
       echo "检查服务器是否存在argocd";
       argocd version;
       echo "正在登录Argocd服务器";
-      argocd login ${ARGO_SERVER}
-      --username ${ARGO_USER} 
-      --password ${ARGO_PASS}
+      argocd login ${ARGO_SERVER} \
+      --username ${ARGO_USER} \
+      --password ${ARGO_PASS} \
       --insecure
       '
 
