@@ -95,36 +95,36 @@ cache:
     - echo $BACKEND_VERSION
 
 # argocd登录模板
-.argocd_login_template:
-  tags:
-    - ${DOCKER_TAG}
-  script:
-    - |
-      cat > env_vars.sh <<EOF
-       #!/usr/bin/bash
-       export ARGO_SERVER=${ARGO_SERVER}
-       export ARGO_USER=${ARGO_USER}
-       export ARGO_PASS=${ARGO_PASS}
-      EOF
-    - chmod +x ./env_vars.sh
-    - ./env_vars.sh
-    - sshpass -e scp -o stricthostkeychecking=no env_vars.sh ${s_user}@${s_host1}:/tmp/
-    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      chmod +x /tmp/env_vars.sh
-      ; source /tmp/env_vars.sh
-      ; cat /tmp/env_vars.sh
-      ; echo "ARGO_SERVER=${ARGO_SERVER}"
-      ; echo "ARGO_USER=${ARGO_USER}"
-      ; echo "ARGO_PASS=${ARGO_PASS}"
-      ; echo "检查服务器是否存在argocd"
-      ; argocd version;
-      ; echo "正在登录Argocd服务器"
-      ; argocd login ${ARGO_SERVER} \
-      --username ${ARGO_USER} \
-      --password ${ARGO_PASS} \
-      --insecure
-      ; rm -rf /tmp/env_vars.sh
-      '
+#.argocd_login_template:
+#  tags:
+#    - ${DOCKER_TAG}
+#  script:
+#    - |
+#      cat > env_vars.sh <<EOF
+#       #!/usr/bin/bash
+#       export ARGO_SERVER=${ARGO_SERVER}
+#       export ARGO_USER=${ARGO_USER}
+#       export ARGO_PASS=${ARGO_PASS}
+#      EOF
+#    - chmod +x ./env_vars.sh
+#    - ./env_vars.sh
+#    - sshpass -e scp -o stricthostkeychecking=no env_vars.sh ${s_user}@${s_host1}:/tmp/
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      chmod +x /tmp/env_vars.sh
+#      ; source /tmp/env_vars.sh
+#      ; cat /tmp/env_vars.sh
+#      ; echo "ARGO_SERVER=${ARGO_SERVER}"
+#      ; echo "ARGO_USER=${ARGO_USER}"
+#      ; echo "ARGO_PASS=${ARGO_PASS}"
+#      ; echo "检查服务器是否存在argocd"
+#      ; argocd version;
+#      ; echo "正在登录Argocd服务器"
+#      ; argocd login ${ARGO_SERVER} \
+#      --username ${ARGO_USER} \
+#      --password ${ARGO_PASS} \
+#      --insecure
+#      ; rm -rf /tmp/env_vars.sh
+#      '
 
 # 初始化运行时的工作, 用于创建基本的环境, 后续环境不再需要时, 把FIRST开关设为非true即可
 #job_first_run:
@@ -249,28 +249,96 @@ cache:
 #      when: always
 
 # 初始化argocd项目
-#job_create_argo_proj:
-#  stage: init
-#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-#  extends:
-#    - .argocd_login_template
-#  before_script:
-#    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-proj.yml ${s_user}@${s_host1}:/tmp/
-#    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-proj.yml ${s_user}@${s_host1}:/tmp/
-#  script:
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      argocd proj create -f /tmp/create-frontend-proj.yml;
-#      argocd proj create -f /tmp/create-backend-proj.yml;
-#      argocd proj list;
-#      '
-#  after_script:
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      rm -rf /tmp/create-frontend-proj.yml;
-#      rm -rf /tmp/create-backend-proj.yml
-#      '
-#  rules:
-#    - if: '$BACKEND_INIT == "true"'
-#      when: always
+job_create_argo_proj:
+  stage: init
+  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+  before_script:
+    - |
+      cat > env_vars.sh <<EOF
+       #!/usr/bin/bash
+       export ARGO_SERVER=${ARGO_SERVER}
+       export ARGO_USER=${ARGO_USER}
+       export ARGO_PASS=${ARGO_PASS}
+      EOF
+    - chmod +x ./env_vars.sh
+    - ./env_vars.sh
+    - >
+      sshpass -e scp -o stricthostkeychecking=no 
+      env_vars.sh 
+      deploy/frontend/kubernetes/argocd/create-frontend-app.yml 
+      deploy/backend/kubernetes/argocd/create-backend-app.yml
+      ${s_user}@${s_host1}:/tmp/
+  script:
+    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+      chmod +x /tmp/env_vars.sh
+      ; source /tmp/env_vars.sh
+      ; cat /tmp/env_vars.sh
+      ; echo "ARGO_SERVER=${ARGO_SERVER}"
+      ; echo "ARGO_USER=${ARGO_USER}"
+      ; echo "ARGO_PASS=${ARGO_PASS}"
+      ; echo "检查服务器是否存在argocd"
+      ; argocd version;
+      ; echo "正在登录Argocd服务器"
+      ; argocd login ${ARGO_SERVER} \
+      --username ${ARGO_USER} \
+      --password ${ARGO_PASS} \
+      --insecure
+      ; rm -rf /tmp/env_vars.sh
+      ; argocd proj create -f /tmp/create-frontend-proj.yml
+      ; argocd proj create -f /tmp/create-backend-proj.yml
+      ; argocd proj list
+      '
+  rules:
+    - if: '$BACKEND_INIT == "true"'
+      when: always
+
+# 部署前后端项目
+job_deploy:
+  stage: deploy
+  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+  tags:
+    - ${DOCKER_TAG}
+  before_script:
+    - |
+      cat > env_vars.sh <<EOF
+       #!/usr/bin/bash
+       export ARGO_SERVER=${ARGO_SERVER}
+       export ARGO_USER=${ARGO_USER}
+       export ARGO_PASS=${ARGO_PASS}
+      EOF
+    - chmod +x ./env_vars.sh
+    - ./env_vars.sh
+    - >
+      sshpass -e scp -o stricthostkeychecking=no 
+      env_vars.sh 
+      deploy/backend/kubernetes/argocd/create-backend-app.yml 
+      deploy/frontend/kubernetes/argocd/create-frontend-app.yml
+      ${s_user}@${s_host1}:/tmp/
+  script:
+    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+      chmod +x /tmp/env_vars.sh
+      ; source /tmp/env_vars.sh
+      ; cat /tmp/env_vars.sh
+      ; echo "ARGO_SERVER=${ARGO_SERVER}"
+      ; echo "ARGO_USER=${ARGO_USER}"
+      ; echo "ARGO_PASS=${ARGO_PASS}"
+      ; echo "检查服务器是否存在argocd"
+      ; argocd version;
+      ; echo "正在登录Argocd服务器"
+      ; argocd login ${ARGO_SERVER} \
+      --username ${ARGO_USER} \
+      --password ${ARGO_PASS} \
+      --insecure
+      ; rm -rf /tmp/env_vars.sh
+      ; argocd app create -f /tmp/create-frontend-app.yml
+      ; argocd app create -f /tmp/create-backend-app.yml
+      ; argocd app list
+      ;  rm -rf /tmp/create-frontend-app.yml
+      ;  rm -rf /tmp/create-backend-app.yml
+      '
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
 
 # 推送部署清单, 让argocd拉取
 #job_push_manifests:
@@ -305,44 +373,6 @@ cache:
 #    - git add full-stack-engineering/backend/deployment.yml
 #    - git commit -am "Update Image"
 #    - git push
-#  rules:
-#    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-#      when: always
-
-# 部署前后端项目
-job_deploy:
-  stage: deploy
-  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-  extends:
-    - .argocd_login_template
-  script:
-    - argocd app create -f /tmp/create-frontend-app.yml
-    - argocd app create -f /tmp/create-backend-app.yml
-  after_script:
-    - rm -rf /tmp/application-frontend.yml
-    - rm -rf /tmp/application-backend.yml
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-      when: always
-#job_deploy:
-#  stage: deploy
-#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-#  extends:
-#    - .argocd_login_template
-#  before_script:
-#    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-app.yml ${s_user}@${s_host1}:/tmp/
-#    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-app.yml ${s_user}@${s_host1}:/tmp/
-#  script:
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      argocd app create -f /tmp/create-frontend-app.yml;
-#      argocd app create -f /tmp/create-backend-app.yml;
-#      argocd app list;
-#      '
-#  after_script:
-#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-#      rm -rf /tmp/application-frontend.yml;
-#      rm -rf /tmp/application-backend.yml
-#      '
 #  rules:
 #    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
 #      when: always
