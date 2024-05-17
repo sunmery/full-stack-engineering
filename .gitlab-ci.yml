@@ -1,5 +1,5 @@
 stages:
-  #  - init
+  - init
   #  - build
   - test
   #  - manifests
