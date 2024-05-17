@@ -12,7 +12,7 @@ variables:
   # 是否需要初始化web, 初始化的工作包含拉取和构建运行Web应用的镜像
   FRONTEND_INIT: "false"
   # 是否需要初始化argo, 初始化的工作包含创建argo的proj
-  BACKEND_INIT: "false"
+  BACKEND_INIT: "true"
 
   # Runner相关配置:
   # 运行前端的runner tag
@@ -57,6 +57,10 @@ variables:
   CGO_ENABLED: 0
   # alpine user id
   UID: 10001
+
+  # 清单仓库
+  MANIFESTS_URL: "https://gitlab.com/lookeke/manifests.git"
+  MANIFESTS_NAMESPACE: "backend"
 
   # Docker 相关配置:
   # 当使用dind服务时，你必须指示docker与服务内部启动的daemon对话。
@@ -259,23 +263,22 @@ job_create_argo_proj:
        export ARGO_SERVER=${ARGO_SERVER}
        export ARGO_USER=${ARGO_USER}
        export ARGO_PASS=${ARGO_PASS}
+       export MANIFESTS_URL=${MANIFESTS_URL}
+       export MANIFESTS_NAMESPACE=${MANIFESTS_NAMESPACE}
       EOF
     - chmod +x ./env_vars.sh
     - ./env_vars.sh
     - >
       sshpass -e scp -o stricthostkeychecking=no 
       env_vars.sh 
-      deploy/frontend/kubernetes/argocd/create-frontend-app.yml 
-      deploy/backend/kubernetes/argocd/create-backend-app.yml
+      deploy/frontend/kubernetes/argocd/create-frontend-proj.yml 
+      deploy/backend/kubernetes/argocd/create-backend-proj.yml
       ${s_user}@${s_host1}:/tmp/
   script:
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       chmod +x /tmp/env_vars.sh
       ; source /tmp/env_vars.sh
       ; cat /tmp/env_vars.sh
-      ; echo "ARGO_SERVER=${ARGO_SERVER}"
-      ; echo "ARGO_USER=${ARGO_USER}"
-      ; echo "ARGO_PASS=${ARGO_PASS}"
       ; echo "检查服务器是否存在argocd"
       ; argocd version
       ; echo "正在登录Argocd服务器"
@@ -286,6 +289,7 @@ job_create_argo_proj:
       ; rm -rf /tmp/env_vars.sh
       ; argocd proj create -f /tmp/create-frontend-proj.yml
       ; argocd proj create -f /tmp/create-backend-proj.yml
+      ; argocd proj add-source ${MANIFESTS_NAMESPACE} ${MANIFESTS_URL}
       ; argocd proj list
       '
   rules:
