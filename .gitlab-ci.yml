@@ -98,7 +98,7 @@ cache:
 .argocd_login_template:
   tags:
     - ${DOCKER_TAG}
-  before_script:
+  script:
     - |
       cat > env_vars.sh <<EOF
        #!/usr/bin/bash
@@ -108,15 +108,18 @@ cache:
       EOF
     - chmod +x ./env_vars.sh
     - ./env_vars.sh
-    - cat env_vars.sh
     - sshpass -e scp -o stricthostkeychecking=no env_vars.sh ${s_user}@${s_host1}:/tmp/
     - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
       chmod +x /tmp/env_vars.sh
       ; source /tmp/env_vars.sh
-      echo "检查服务器是否存在argocd";
-      argocd version;
-      echo "正在登录Argocd服务器";
-      argocd login ${ARGO_SERVER} \
+      ; cat /tmp/env_vars.sh
+      ; echo "ARGO_SERVER=${ARGO_SERVER}"
+      ; echo "ARGO_USER=${ARGO_USER}"
+      ; echo "ARGO_PASS=${ARGO_PASS}"
+      ; echo "检查服务器是否存在argocd"
+      ; argocd version;
+      ; echo "正在登录Argocd服务器"
+      ; argocd login ${ARGO_SERVER} \
       --username ${ARGO_USER} \
       --password ${ARGO_PASS} \
       --insecure
