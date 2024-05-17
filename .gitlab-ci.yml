@@ -97,7 +97,7 @@ cache:
 # argocd登录模板
 .argocd_login_template:
   tags:
-    - ${SHELL_TAG}
+    - ${DOCKER_TAG}
   before_script:
     - echo "正在登录Argocd服务器"
     - >
