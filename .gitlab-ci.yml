@@ -119,13 +119,13 @@ cache:
 #    - pnpm i
 #    - pnpm lint
 
-job_runner_test:
-  stage: test
-  tags:
-    - ${SHELL_TAG}
-  script:
-    - argocd version
-    - sshpass -V
+#job_runner_test:
+#  stage: test
+#  tags:
+#    - ${SHELL_TAG}
+#  script:
+#    - argocd version
+#    - sshpass -V
 
 # 后端模块测试
 #job_backend_test:
