@@ -120,8 +120,7 @@ cache:
 #    - pnpm lint
 
 job_runner_test:
-  stage:
-    - test
+  stage: test
   tags:
     - ${SHELL_TAG}
   script:
