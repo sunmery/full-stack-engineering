@@ -277,7 +277,7 @@ job_create_argo_proj:
       ; echo "ARGO_USER=${ARGO_USER}"
       ; echo "ARGO_PASS=${ARGO_PASS}"
       ; echo "检查服务器是否存在argocd"
-      ; argocd version;
+      ; argocd version
       ; echo "正在登录Argocd服务器"
       ; argocd login ${ARGO_SERVER} \
       --username ${ARGO_USER} \
