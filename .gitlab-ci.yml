@@ -193,28 +193,28 @@ job_runner_test:
 #      when: always
 
 # 初始化argocd项目
-job_create_argo_proj:
-  stage: init
-  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
-  extends:
-    - .argocd_login_template
-  before_script:
-    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-proj.yml ${s_user}@${s_host1}:/tmp/
-    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-proj.yml ${s_user}@${s_host1}:/tmp/
-  script:
-    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      argocd proj create -f /tmp/create-frontend-proj.yml;
-      argocd proj create -f /tmp/create-backend-proj.yml;
-      argocd proj list;
-      '
-  after_script:
-    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
-      rm -rf /tmp/create-frontend-proj.yml;
-      rm -rf /tmp/create-backend-proj.yml
-      '
-  rules:
-    - if: '$BACKEND_INIT == "true"'
-      when: always
+#job_create_argo_proj:
+#  stage: init
+#  image: ccr.ccs.tencentyun.com/lisa/alpine:latest
+#  extends:
+#    - .argocd_login_template
+#  before_script:
+#    - sshpass -e scp -o stricthostkeychecking=no deploy/frontend/kubernetes/argocd/create-frontend-proj.yml ${s_user}@${s_host1}:/tmp/
+#    - sshpass -e scp -o stricthostkeychecking=no deploy/backend/kubernetes/argocd/create-backend-proj.yml ${s_user}@${s_host1}:/tmp/
+#  script:
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      argocd proj create -f /tmp/create-frontend-proj.yml;
+#      argocd proj create -f /tmp/create-backend-proj.yml;
+#      argocd proj list;
+#      '
+#  after_script:
+#    - sshpass -e ssh -o stricthostkeychecking=no ${s_user}@${s_host1} '
+#      rm -rf /tmp/create-frontend-proj.yml;
+#      rm -rf /tmp/create-backend-proj.yml
+#      '
+#  rules:
+#    - if: '$BACKEND_INIT == "true"'
+#      when: always
 
 # 推送部署清单, 让argocd拉取
 #job_push_manifests:
