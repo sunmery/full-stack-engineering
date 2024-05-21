@@ -41,7 +41,7 @@ ARG PORT1=30001
 # 后端程序的HTTP端口(如果有), 例如30002
 ARG PORT1=30002
 
-# 修改镜像源为中国科技大学的镜像源
+# 修改镜像源
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 
 # 安装应用运行必需的系统证书和时区数据包

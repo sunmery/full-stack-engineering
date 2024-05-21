@@ -19,6 +19,7 @@ spec:
           ports:
             - containerPort: 30001
             - containerPort: 30002
+
           volumeMounts:
             - name: config-volume
               mountPath: /data/conf

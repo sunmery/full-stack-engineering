@@ -12,7 +12,7 @@ variables:
   # 是否需要初始化web, 初始化的工作包含拉取和构建运行Web应用的镜像
   FRONTEND_INIT: "false"
   # 是否需要初始化argo, 初始化的工作包含创建argo的proj
-  BACKEND_INIT: "true"
+  BACKEND_INIT: "false"
 
   # Runner相关配置:
   # 运行前端的runner tag
@@ -110,14 +110,6 @@ job_frontend_test:
   script:
     - pnpm i
     - pnpm lint
-
-job_runner_test:
-  stage: test
-  tags:
-    - ${SHELL_TAG}
-  script:
-    - argocd version
-    - sshpass -V
 
 # 后端模块测试
 job_backend_test:
@@ -317,6 +309,8 @@ job_push_manifests:
 job_verify:
   stage: verify
   image: ccr.ccs.tencentyun.com/lisa/alpine
+  tags:
+    - ${DOCKER_TAG}
   before_script:
     - apk add curl
   script:
