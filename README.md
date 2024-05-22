@@ -43,6 +43,10 @@ CI的最佳实践有:
 
 本项目使用Gitlab + Argo 作为自动化的部署
 
+#### Observability
+
+本仓库的后端项目接口支持Observability可观测性. 使用`opentelemetry`库来对`gRPC`与`HTTP`接口进行采集`指标`/`日志`的遥测数据
+
 #### 网关与安全
 
 TODO
