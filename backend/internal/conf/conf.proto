@@ -41,6 +41,11 @@ message Data {
   Redis redis = 2;
 }
 
+// 身份验证/鉴权
+message Auth {
+  string jwt_key = 1;
+}
+
 // 分布式链路追踪
 message Trace {
   message Jaeger {

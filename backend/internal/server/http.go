@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
+	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/gorilla/handlers"
 	"go.opentelemetry.io/otel"
@@ -21,9 +22,24 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/http"
+
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	jwtv5 "github.com/golang-jwt/jwt/v5"
 )
 
-var serviceName = semconv.ServiceNameKey.String("kratos-service")
+// NewWhiteListMatcher 设置白名单，不需要 token 验证的接口
+func NewWhiteListMatcher() selector.MatchFunc {
+	whiteList := make(map[string]struct{})
+	whiteList["/shop.v1.ShopService/Captcha"] = struct{}{}
+	whiteList["/shop.v1.ShopService/Login"] = struct{}{}
+	whiteList["/shop.v1.ShopService/Register"] = struct{}{}
+	return func(ctx context.Context, operation string) bool {
+		if _, ok := whiteList[operation]; ok {
+			return false
+		}
+		return true
+	}
+}
 
 // Initializes an OTLP exporter, and configures the corresponding trace provider.
 func initTracerProvider(ctx context.Context, res *resource.Resource, conn string) (func(context.Context) error, error) {
@@ -62,12 +78,14 @@ func initTracerProvider(ctx context.Context, res *resource.Resource, conn string
 
 // NewHTTPServer new an HTTP server.
 func NewHTTPServer(
+	ac *conf.Auth,
 	c *conf.Server,
 	tr *conf.Trace,
 	greeter *service.GreeterService,
 	logger log.Logger,
 	) *http.Server {
 	ctx := context.Background()
+
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			// The service name used to display traces in backends
@@ -87,20 +105,20 @@ func NewHTTPServer(
 	if err2 != nil {
 		log.Fatal(err)
 	}
-	// defer func() {
-	// 	if err := shutdownTracerProvider(ctx); err != nil {
-	// 		log.Fatalf("failed to shutdown TracerProvider: %s", err)
-	// 	}
-	// }()
-
-	// tracer := otel.Tracer("test-tracer")
-	// meter := otel.Meter("test-meter")
 
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
-			logging.Server(logger), // 日志
-			tracing.Server(), // 链路追踪
+			logging.Server(logger), // logging 日志
+			tracing.Server(), // trace 链路追踪
+			// jwt 身份验证
+			selector.Server(
+				jwt.Server(func(token *jwtv5.Token) (interface{}, error) {
+					return []byte(ac.JwtKey), nil
+				}),
+			).
+				Match(NewWhiteListMatcher()).
+				Build(),
 		),
 		http.Filter(handlers.CORS( // 浏览器跨域
 			handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),

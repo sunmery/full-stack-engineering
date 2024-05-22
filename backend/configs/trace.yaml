@@ -1,6 +1,0 @@
-jaeger:
-  service_name: full-stack-engineering-backend-api
-  grpc:
-    endpoint: 192.168.2.191:4317
-  http:
-    endpoint: 192.168.2.191:4318

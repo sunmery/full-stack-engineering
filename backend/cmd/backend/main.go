@@ -83,6 +83,11 @@ func main() {
 		panic(err)
 	}
 
+	var ac conf.Auth
+	if err := c.Scan(&ac); err != nil {
+		panic(err)
+	}
+
 	// 服务注册发现
 	var rc conf.Registry
 	if err := c.Scan(&rc); err != nil {
@@ -95,7 +100,7 @@ func main() {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server, &rc, &tc, bc.Data, logger)
+	app, cleanup, err := wireApp(bc.Server, &ac, &rc, &tc, bc.Data, logger)
 	if err != nil {
 		panic(err)
 	}
