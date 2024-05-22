@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/registry"
+
 	"os"
 
 	"backend/internal/conf"
@@ -11,7 +13,6 @@ import (
 	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/config/file"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
 
@@ -20,13 +21,12 @@ import (
 
 // go build -ldflags "-X main.Version=x.y.z"
 var (
-	// Name is the name of the compiled software.
-	Name string = "mandala"
-	// Version is the version of the compiled software.
+	// Name 编译后的二进制名称
+	Name string = "backend"
+	// Version 已编译软件的版本。
 	Version string = "v1.0.0"
-	// flagConf is the config flag.
+	// flag标记
 	flagConf string = "dev"
-
 	// id, _ = os.Hostname()
 	id = "dev"
 )
@@ -66,6 +66,7 @@ func main() {
 		"trace.id", tracing.TraceID(),
 		"span.id", tracing.SpanID(),
 	)
+
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagConf),
@@ -82,13 +83,19 @@ func main() {
 		panic(err)
 	}
 
-	// 添加配置信息
+	// 服务注册发现
 	var rc conf.Registry
 	if err := c.Scan(&rc); err != nil {
 		panic(err)
 	}
 
-	app, cleanup, err := wireApp(bc.Server,&rc, bc.Data, logger)
+	// trace
+	var tc conf.Trace
+	if err := c.Scan(&tc); err != nil {
+		panic(err)
+	}
+
+	app, cleanup, err := wireApp(bc.Server, &rc, &tc, bc.Data, logger)
 	if err != nil {
 		panic(err)
 	}
