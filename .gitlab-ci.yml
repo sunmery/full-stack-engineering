@@ -2,6 +2,7 @@ stages:
   - init
   - build
   - test
+  - lint
   - manifests
   - deploy
   - verify
@@ -80,7 +81,7 @@ cache:
 # Docker登录模板
 .docker_login_template:
   # 建议与你注册Runner选择的Docker镜像一致
-  image: ${DOCKER_TAG}
+  image: docker:26.1.0-dind-alpine3.19
   services:
     # 建议与你注册Runner选择的Docker镜像一致
     - ${DOCKER_TAG}
@@ -99,8 +100,8 @@ cache:
     - echo $BACKEND_VERSION
 
 # 前端模块测试
-job_frontend_test:
-  stage: test
+job_frontend_lint:
+  stage: lint
   image: node:18-alpine
   tags:
     - ${FRONTEND_TAG}
@@ -110,13 +111,16 @@ job_frontend_test:
   script:
     - pnpm i
     - |
-      pnpm lint || { 
-        echo "Linting failed, running fix commands..."
+      pnpm lint || {
+        echo "run pnpm lint failed, running other commands..."
         pnpm oxlint
         pnpm prettier:write
         pnpm eslint:fix
         pnpm stylelint:fix
       }
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: always
 
 # 后端模块测试
 job_backend_test:
