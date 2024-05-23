@@ -110,15 +110,13 @@ job_frontend_test:
   script:
     - pnpm i
     - |
-      if [ pnpm lint -ne 0 ]; then
-        echo "pnpm lint failed, running additional commands..."
+      pnpm lint || { 
+        echo "Linting failed, running fix commands..."
         pnpm oxlint
         pnpm prettier:write
         pnpm eslint:fix
         pnpm stylelint:fix
-      else
-        echo "pnpm lint succeeded, no further actions required."
-      fi
+      }
 
 # 后端模块测试
 job_backend_test:
