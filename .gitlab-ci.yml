@@ -68,7 +68,7 @@ variables:
   # 这个守护进程可以通a网络连接来使用，而不是默认的/var/run/docker套接字。
   # 如果你使用的是GitLab Runner 12.7或更早版本的Kubernetes执行器和Kubernetes 1.6或更早版本，由于
   # Kubernetes执行器的连接方式，该变量必须设置为tcp://localhost:2375
-#  DOCKER_HOST: "tcp://docker:2375"
+  # DOCKER_HOST: "tcp://docker:2375"
   # 这指示Docker不要重新启动TLS。如果远程注册表不是HTTPS, 就填写
   DOCKER_TLS_CERTDIR: ""
 
@@ -81,12 +81,12 @@ cache:
 # Docker登录模板
 .docker_login_template:
   # 建议与你注册Runner选择的Docker镜像一致
-#  image: docker:26.1.0-dind-alpine3.19
-#  tags:
-#    - ${DOCKER_TAG}
-#  services:
-#     建议与你注册Runner选择的Docker镜像一致
-#    - docker:26.1.0-dind-alpine3.19
+  image: docker:26.1.0-dind-alpine3.19
+  tags:
+    - ${DOCKER_TAG}
+  services:
+    # 建议与你注册Runner选择的Docker镜像一致
+    - docker:26.1.0-dind-alpine3.19
   before_script:
     - echo "正在查看Docker 信息"
     - docker info || true
