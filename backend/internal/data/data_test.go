@@ -2,10 +2,15 @@ package data
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
+	"github.com/uptrace/bun/extra/bunotel"
+	"runtime"
+
 	"testing"
 )
 
@@ -20,27 +25,47 @@ type Keys struct {
 
 func TestNewDB(t *testing.T) {
 	keys := Keys{
-		Host:     "192.168.2.182",
+		Host:     "192.168.2.102",
 		Port: 5432,
-		Username: "postgres",
-		Password: "msdnmm",
-		Dbname:   "postgres",
+		Username: "dbuser_dba",
+		Password: "DBUser.DBA",
+		Dbname:   "users",
 		SslMode :"disable",
 	}
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%v TimeZone=Asia/Shanghai", keys.Host, keys.Username, keys.Password, keys.Dbname, keys.Port, keys.SslMode)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic(err)
+	// dsn := fmt.Sprintf("postgres://dbuser_dba:DBUser.DBA@192.168.2.102:5432/users?sslmode=disable")
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		keys.Username,
+		keys.Password,
+		keys.Host,
+		keys.Port,
+		keys.Dbname,
+		keys.SslMode,
+	)
+	sqlDb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
+	db := bun.NewDB(sqlDb, pgdialect.New(), bun.WithDiscardUnknownColumns())
+
+	// otel 可观测性套件
+	db.AddQueryHook(bunotel.NewQueryHook(bunotel.WithDBName("meta")))
+
+	// Go 程序的并发执行使用的 CPU 核心数设置, 0为最大可用值，并且保持当前的设置
+	db.SetMaxOpenConns(4 * runtime.GOMAXPROCS(0))
+	db.SetMaxIdleConns(4 * runtime.GOMAXPROCS(0))
+
+	type User struct {
+		bun.BaseModel `bun:"table:user"`
+
+		ID int64 `bun:",pk,autoincrement"`
+		Username string `bun:"username"`
+		Password string `bun:"password"`
+		Age      int    `bun:"age"`
+		Gender   string `bun:"gender"`
 	}
-	// Ping数据库
-	sqlDB, err := db.DB()
+
+	result, err := db.NewCreateTable().Model((*User)(nil)).Exec(context.TODO())
 	if err != nil {
-		panic("无法获取数据库连接")
+		t.Error(err)
 	}
-	err = sqlDB.Ping()
-	if err != nil {
-		panic("无法ping数据库")
-	}
+	t.Log(result)
 }
 
 // 参考 https://redis.uptrace.dev/guide/go-redis-sentinel.html#redis-server-client

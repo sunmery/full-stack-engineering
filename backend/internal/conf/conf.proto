@@ -35,6 +35,8 @@ message Data {
     uint32 port = 5;
     string ssl_mode = 6;
     string time_zone = 7;
+    uint32 max_open_conn = 8;
+    uint32 max_idle_conn = 9;
   }
   message Redis {
     google.protobuf.Duration read_timeout = 1;
