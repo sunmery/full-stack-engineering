@@ -64,11 +64,14 @@ func TestNewDB(t *testing.T) {
 		Gender   string `bun:"gender"`
 	}
 
-	result, err := db.NewCreateTable().Model((*User)(nil)).Exec(context.TODO())
-	if err != nil {
+	if _, err := db.NewCreateTable().
+		Model((*User)(nil)).
+		IfNotExists().
+		Exec(context.TODO());
+	err != nil {
 		t.Error(err)
 	}
-	t.Log(result)
+	t.Log("Success")
 }
 
 // 参考 https://redis.uptrace.dev/guide/go-redis-sentinel.html#redis-server-client
