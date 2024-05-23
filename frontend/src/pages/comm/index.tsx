@@ -4,7 +4,7 @@ import {Box, Link, List, ListItem, Typography} from '@mui/joy'
 /**
  * @returns JSXElement
  */
-export default function Comm() {
+export default function Page() {
 	const [serverList] = useState([
 		{
 			label: 'gitlab',
