@@ -1,6 +1,6 @@
-#syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=node:20.11.0-alpine
+ARG NODE_VERSION=node:lts-alpine
 ARG PACK_VERSION=latest
 ARG FRONTEND_PORT1=80
 ARG FRONTEND_PORT2=443
