@@ -82,9 +82,11 @@ cache:
 .docker_login_template:
   # 建议与你注册Runner选择的Docker镜像一致
   image: docker:26.1.0-dind-alpine3.19
+  tags:
+    - ${DOCKER_TAG}
   services:
     # 建议与你注册Runner选择的Docker镜像一致
-    - ${DOCKER_TAG}
+    - docker:26.1.0-dind-alpine3.19
   before_script:
     - echo "正在查看Docker 信息"
     - docker info
