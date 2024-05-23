@@ -9,10 +9,20 @@ server:
 # 数据库
 data:
   database:
-    driver: mysql
-    source: root:root@tcp(127.0.0.1:3306)/test?parseTime=True&loc=Local
+    host: 192.168.2.182
+    username: postgres
+    password: msdnmm
+    dbname: postgres
+    port: 5432
+    ssl_mode: disable
+    time_zone: Asia/Shanghai
+
   redis:
-    addr: 127.0.0.1:6379
+    user: default
+    pass: "msdnmm,."
+    addr: 192.168.2.192:6379
+    db: 0
+    dial_timeout: 1s
     read_timeout: 0.2s
     write_timeout: 0.2s
 
