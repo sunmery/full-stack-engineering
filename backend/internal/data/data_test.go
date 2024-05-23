@@ -21,6 +21,7 @@ type Keys struct {
 	Password string
 	Dbname   string
 	SslMode string
+	TimeZone string
 }
 
 func TestNewDB(t *testing.T) {
@@ -31,15 +32,17 @@ func TestNewDB(t *testing.T) {
 		Password: "DBUser.DBA",
 		Dbname:   "users",
 		SslMode :"disable",
+		TimeZone :"Asia/Shanghai",
 	}
 	// dsn := fmt.Sprintf("postgres://dbuser_dba:DBUser.DBA@192.168.2.102:5432/users?sslmode=disable")
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&TimeZone=%s",
 		keys.Username,
 		keys.Password,
 		keys.Host,
 		keys.Port,
 		keys.Dbname,
 		keys.SslMode,
+		keys.TimeZone,
 	)
 	sqlDb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 	db := bun.NewDB(sqlDb, pgdialect.New(), bun.WithDiscardUnknownColumns())
