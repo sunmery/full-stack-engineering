@@ -89,7 +89,7 @@ cache:
     - docker:26.1.0-dind-alpine3.19
   before_script:
     - echo "正在查看Docker 信息"
-    - docker info
+    - docker info || true
     - echo "正在登录到远程注册表"
     - docker login $REGISTER_ADDRESS -u $REGISTER_USERNAME -p $REGISTER_PASSWORD
     - |
