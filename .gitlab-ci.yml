@@ -109,9 +109,8 @@ job_frontend_test:
     - npm install -g pnpm
   script:
     - pnpm i
-    - pnpm lint
     - |
-      if [ $? -ne 0 ]; then
+      if [ pnpm lint -ne 0 ]; then
         echo "pnpm lint failed, running additional commands..."
         pnpm oxlint
         pnpm prettier:write
