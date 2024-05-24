@@ -11,11 +11,17 @@ option java_package = "dev.kratos.api.helloworld.v1";
 option java_outer_classname = "HelloworldProtoV1";
 
 // The greeting service definition.
-service Greeter {
+service GreeterService {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {
     option (google.api.http) = {
-      get: "/helloworld/{name}"
+      get: "/api/v1/hello/{name}"
+    };
+  }
+
+  rpc Query (QueryRequest) returns (QueryReply) {
+    option (google.api.http) = {
+      get: "/api/v1/query",
     };
   }
 }
@@ -28,4 +34,26 @@ message HelloRequest {
 // The response message containing the greetings
 message HelloReply {
   string message = 1;
+}
+
+message Data {
+  enum Gender {
+    UNKNOWN = 0;
+    MALE = 1;
+    FEMALE = 2;
+  }
+  uint32 id = 1;
+  string username = 2;
+  string age = 3;
+  Gender gender = 4;
+}
+
+message QueryRequest {
+  string name = 1;
+}
+
+message QueryReply {
+  Data data = 1;
+  uint32 code = 2;
+  string message = 3;
 }

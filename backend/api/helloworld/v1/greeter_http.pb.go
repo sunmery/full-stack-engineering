@@ -19,19 +19,22 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
-const OperationGreeterSayHello = "/helloworld.v1.Greeter/SayHello"
+const OperationGreeterServiceQuery = "/helloworld.v1.GreeterService/Query"
+const OperationGreeterServiceSayHello = "/helloworld.v1.GreeterService/SayHello"
 
-type GreeterHTTPServer interface {
+type GreeterServiceHTTPServer interface {
+	Query(context.Context, *QueryRequest) (*QueryReply, error)
 	// SayHello Sends a greeting
 	SayHello(context.Context, *HelloRequest) (*HelloReply, error)
 }
 
-func RegisterGreeterHTTPServer(s *http.Server, srv GreeterHTTPServer) {
+func RegisterGreeterServiceHTTPServer(s *http.Server, srv GreeterServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/helloworld/{name}", _Greeter_SayHello0_HTTP_Handler(srv))
+	r.GET("/api/v1/hello/{name}", _GreeterService_SayHello0_HTTP_Handler(srv))
+	r.GET("/api/v1/query", _GreeterService_Query0_HTTP_Handler(srv))
 }
 
-func _Greeter_SayHello0_HTTP_Handler(srv GreeterHTTPServer) func(ctx http.Context) error {
+func _GreeterService_SayHello0_HTTP_Handler(srv GreeterServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in HelloRequest
 		if err := ctx.BindQuery(&in); err != nil {
@@ -40,7 +43,7 @@ func _Greeter_SayHello0_HTTP_Handler(srv GreeterHTTPServer) func(ctx http.Contex
 		if err := ctx.BindVars(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationGreeterSayHello)
+		http.SetOperation(ctx, OperationGreeterServiceSayHello)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.SayHello(ctx, req.(*HelloRequest))
 		})
@@ -53,23 +56,56 @@ func _Greeter_SayHello0_HTTP_Handler(srv GreeterHTTPServer) func(ctx http.Contex
 	}
 }
 
-type GreeterHTTPClient interface {
+func _GreeterService_Query0_HTTP_Handler(srv GreeterServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in QueryRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationGreeterServiceQuery)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Query(ctx, req.(*QueryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*QueryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+type GreeterServiceHTTPClient interface {
+	Query(ctx context.Context, req *QueryRequest, opts ...http.CallOption) (rsp *QueryReply, err error)
 	SayHello(ctx context.Context, req *HelloRequest, opts ...http.CallOption) (rsp *HelloReply, err error)
 }
 
-type GreeterHTTPClientImpl struct {
+type GreeterServiceHTTPClientImpl struct {
 	cc *http.Client
 }
 
-func NewGreeterHTTPClient(client *http.Client) GreeterHTTPClient {
-	return &GreeterHTTPClientImpl{client}
+func NewGreeterServiceHTTPClient(client *http.Client) GreeterServiceHTTPClient {
+	return &GreeterServiceHTTPClientImpl{client}
 }
 
-func (c *GreeterHTTPClientImpl) SayHello(ctx context.Context, in *HelloRequest, opts ...http.CallOption) (*HelloReply, error) {
-	var out HelloReply
-	pattern := "/helloworld/{name}"
+func (c *GreeterServiceHTTPClientImpl) Query(ctx context.Context, in *QueryRequest, opts ...http.CallOption) (*QueryReply, error) {
+	var out QueryReply
+	pattern := "/api/v1/query"
 	path := binding.EncodeURL(pattern, in, true)
-	opts = append(opts, http.Operation(OperationGreeterSayHello))
+	opts = append(opts, http.Operation(OperationGreeterServiceQuery))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *GreeterServiceHTTPClientImpl) SayHello(ctx context.Context, in *HelloRequest, opts ...http.CallOption) (*HelloReply, error) {
+	var out HelloReply
+	pattern := "/api/v1/hello/{name}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationGreeterServiceSayHello))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

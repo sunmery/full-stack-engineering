@@ -30,9 +30,8 @@ import (
 // NewWhiteListMatcher 设置白名单，不需要 token 验证的接口
 func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList := make(map[string]struct{})
-	whiteList["/shop.v1.ShopService/Captcha"] = struct{}{}
+	whiteList["/helloworld.v1.GreeterService/Query"] = struct{}{}
 	whiteList["/shop.v1.ShopService/Login"] = struct{}{}
-	whiteList["/shop.v1.ShopService/Register"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false
@@ -136,6 +135,6 @@ func NewHTTPServer(
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
-	v1.RegisterGreeterHTTPServer(srv, greeter)
+	v1.RegisterGreeterServiceHTTPServer(srv, greeter)
 	return srv
 }

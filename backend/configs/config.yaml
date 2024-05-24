@@ -9,10 +9,10 @@ server:
 # 数据库
 data:
   database:
-    host: 192.168.2.182
-    username: postgres
-    password: msdnmm
-    dbname: postgres
+    host: 192.168.2.102
+    username: dbuser_dba
+    password: DBUser.DBA
+    dbname: meta
     port: 5432
     ssl_mode: disable
     time_zone: Asia/Shanghai
