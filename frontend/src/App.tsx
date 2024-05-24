@@ -1,9 +1,15 @@
-import Comm from './components/comm/comm'
+// import CommPage from '@/pages/comm'
+import Page from '@/pages/hello'
 
 /**
  * 应用程入口
  * @returns JSXElement
  */
 export default function App() {
-	return <Comm />
+	return (
+		<>
+			<Page />
+			{/* <CommPage /> */}
+		</>
+	)
 }

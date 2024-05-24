@@ -1,4 +1,5 @@
 import {defineConfig} from 'vite'
+import {resolve} from 'path'
 import react from '@vitejs/plugin-react'
 // import basicSsl from '@vitejs/plugin-basic-ssl'
 
@@ -25,6 +26,12 @@ export default defineConfig(async ({command}) => {
 				// 					certDir: '/Users/.../.devServer/cert',
 				// 				}),
 			],
+
+			resolve: {
+				alias: {
+					'@': resolve(__dirname, 'src'),
+				},
+			},
 
 			// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
 			//
