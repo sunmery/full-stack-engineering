@@ -1,15 +1,8 @@
-// import CommPage from '@/pages/comm'
-import Page from '@/pages/hello'
-
+import PrimarySearchAppBar from '@/components/bar'
 /**
  * 应用程入口
  * @returns JSXElement
  */
 export default function App() {
-	return (
-		<>
-			<Page />
-			{/* <CommPage /> */}
-		</>
-	)
+	return <PrimarySearchAppBar />
 }

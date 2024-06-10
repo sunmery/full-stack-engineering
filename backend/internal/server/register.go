@@ -9,14 +9,14 @@ import (
 
 func NewRegister(conf *conf.Registry) (registry.Registrar, error) {
 	c := &api.Config{
-		Address:    conf.Consul.Address,
-		Scheme:     conf.Consul.Schema,
-		TLSConfig:  api.TLSConfig{},
+		Address: conf.Consul.Address,
+		Scheme:  conf.Consul.Schema,
+		// TLSConfig: api.TLSConfig{},
 	}
 	cli, err := api.NewClient(c)
 	if err != nil {
 		return nil, err
 	}
-	r := consul.New(cli,consul.WithHealthCheck(conf.Consul.HealthCheck))
+	r := consul.New(cli, consul.WithHealthCheck(conf.Consul.HealthCheck))
 	return r, err
 }

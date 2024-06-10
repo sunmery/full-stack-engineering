@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/registry"
-
-	"os"
 
 	"backend/internal/conf"
 
@@ -40,7 +40,7 @@ func newApp(
 	rr registry.Registrar, // 注册发现的接口
 	gs *grpc.Server,
 	hs *http.Server,
-	) *kratos.App {
+) *kratos.App {
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),

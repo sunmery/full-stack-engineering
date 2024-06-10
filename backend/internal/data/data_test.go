@@ -4,35 +4,36 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"runtime"
+	"testing"
+
 	"github.com/redis/go-redis/v9"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/extra/bunotel"
-	"runtime"
-
-	"testing"
 )
 
+// TODO todolist
 type Keys struct {
-	Host string
-	Port int32
+	Host     string
+	Port     int32
 	Username string
 	Password string
 	Dbname   string
-	SslMode string
+	SslMode  string
 	TimeZone string
 }
 
 func TestNewDB(t *testing.T) {
 	keys := Keys{
 		Host:     "192.168.2.102",
-		Port: 5432,
+		Port:     5432,
 		Username: "dbuser_dba",
 		Password: "DBUser.DBA",
 		Dbname:   "users",
-		SslMode :"disable",
-		TimeZone :"Asia/Shanghai",
+		SslMode:  "disable",
+		TimeZone: "Asia/Shanghai",
 	}
 	// dsn := fmt.Sprintf("postgres://dbuser_dba:DBUser.DBA@192.168.2.102:5432/users?sslmode=disable")
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s&TimeZone=%s",
@@ -57,7 +58,7 @@ func TestNewDB(t *testing.T) {
 	type User struct {
 		bun.BaseModel `bun:"table:user"`
 
-		ID int64 `bun:",pk,autoincrement"`
+		ID       int64  `bun:",pk,autoincrement"`
 		Username string `bun:"username"`
 		Password string `bun:"password"`
 		Age      int    `bun:"age"`
@@ -67,8 +68,7 @@ func TestNewDB(t *testing.T) {
 	if _, err := db.NewCreateTable().
 		Model((*User)(nil)).
 		IfNotExists().
-		Exec(context.TODO());
-	err != nil {
+		Exec(context.TODO()); err != nil {
 		t.Error(err)
 	}
 	t.Log("Success")
@@ -89,8 +89,8 @@ func TestNewCache(t *testing.T) {
 		// Addr:     "192.168.2.158:6379",
 		Protocol: 3,
 		Addr:     "192.168.2.192:6379",
-		Username: "default", // redis实例的用户名, 非哨兵节点名
-		Password: "msdnmm,.",  // redis实例的用户密码, 如果有密码，请填写
+		Username: "default",  // redis实例的用户名, 非哨兵节点名
+		Password: "msdnmm,.", // redis实例的用户密码, 如果有密码，请填写
 		DB:       0,
 	})
 	// client := redis.NewFailoverClusterClient(&redis.FailoverOptions{

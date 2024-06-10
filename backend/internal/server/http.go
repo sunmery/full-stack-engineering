@@ -1,15 +1,21 @@
 package server
 
 import (
-	v1 "backend/api/helloworld/v1"
-	"backend/internal/conf"
-	"backend/internal/service"
 	"context"
 	"fmt"
+
+	v1 "backend/api/helloworld/v1"
+	"backend/internal/conf"
+	myAuthz "backend/internal/helper/authz"
+	"backend/internal/service"
+
+	"github.com/casbin/casbin/v2/model"
+	fileAdapter "github.com/casbin/casbin/v2/persist/file-adapter"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/gorilla/handlers"
+	casbinM "github.com/tx7do/kratos-casbin/authz/casbin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
@@ -30,6 +36,7 @@ import (
 // NewWhiteListMatcher 设置白名单，不需要 token 验证的接口
 func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList := make(map[string]struct{})
+	whiteList["/helloworld.v1.GreeterService/SayHello"] = struct{}{}
 	whiteList["/helloworld.v1.GreeterService/Query"] = struct{}{}
 	whiteList["/shop.v1.ShopService/Login"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
@@ -75,14 +82,45 @@ func initTracerProvider(ctx context.Context, res *resource.Resource, conn string
 	return tracerProvider.Shutdown, nil
 }
 
+// NewMiddleware 创建中间件
+func NewMiddleware(
+	ac *conf.Auth,
+	c *conf.Server,
+	logger log.Logger,
+) http.ServerOption {
+	// casbin start
+	m, _ := model.NewModelFromFile("../../configs/authz/authz_model.conf")
+	a := fileAdapter.NewAdapter("../../configs/authz/authz_policy.csv")
+	// casbin end
+	return http.Middleware(
+		recovery.Recovery(),
+		logging.Server(logger), // logging 日志
+		tracing.Server(),       // trace 链路追踪
+		// jwt 身份验证
+		selector.Server(
+			jwt.Server(func(token *jwtv5.Token) (interface{}, error) {
+				return []byte(ac.JwtKey), nil
+			}),
+			casbinM.Server(
+				casbinM.WithCasbinModel(m),
+				casbinM.WithCasbinPolicy(a),
+				casbinM.WithSecurityUserCreator(myAuthz.NewSecurityUser),
+			),
+		).
+			Match(NewWhiteListMatcher()).
+			Build(),
+	)
+}
+
 // NewHTTPServer new an HTTP server.
 func NewHTTPServer(
 	ac *conf.Auth,
 	c *conf.Server,
+	logger log.Logger,
 	tr *conf.Trace,
 	greeter *service.GreeterService,
-	logger log.Logger,
-	) *http.Server {
+) *http.Server {
+	// trace start
 	ctx := context.Background()
 
 	res, err := resource.New(ctx,
@@ -104,25 +142,16 @@ func NewHTTPServer(
 	if err2 != nil {
 		log.Fatal(err)
 	}
+	// trace end
 
-	var opts = []http.ServerOption{
-		http.Middleware(
-			recovery.Recovery(),
-			logging.Server(logger), // logging 日志
-			tracing.Server(), // trace 链路追踪
-			// jwt 身份验证
-			selector.Server(
-				jwt.Server(func(token *jwtv5.Token) (interface{}, error) {
-					return []byte(ac.JwtKey), nil
-				}),
-			).
-				Match(NewWhiteListMatcher()).
-				Build(),
-		),
+	opts := []http.ServerOption{
+		NewMiddleware(ac, c, logger),
 		http.Filter(handlers.CORS( // 浏览器跨域
 			handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
 			handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}),
+			// handlers.AllowedOrigins([]string{"http://localhost:3000", "http://127.0.0.1:3000"}),
 			handlers.AllowedOrigins([]string{"*"}),
+			handlers.AllowCredentials(),
 		)),
 	}
 	if c.Http.Network != "" {

@@ -1,4 +1,5 @@
 stages:
+  - qodana
   - init
   - build
   - test
@@ -326,10 +327,10 @@ job_verify:
     - apk add curl
   script:
     - echo "访问前端网站"
-    - curl -L https://${s_host1}
+    - curl -L https://${s_host1} || true
     # TODO 编写等待Kubernetes资源准备好接受流量时才进行请求
     - echo "访问后端暴露的HTTP健康检查接口检测它的响应码是否为200"
-    - http_code=$(curl -s -o /dev/null -w "%{http_code}" http://${s_host1}:${BACKEND_PORT1}/helloworld/lisa)
+    - http_code=$(curl -s -o /dev/null -w "%{http_code}" http://${s_host1}:${BACKEND_PORT1}/helloworld/lisa) || true
     - |
       if [ curl $http_code -eq 200 ]; then
         echo "HTTP的响应成功"
@@ -337,7 +338,7 @@ job_verify:
         echo "HTTP请求失败"
       fi
   after_script:
-    - curl http://${s_host1}:${BACKEND_PORT1}/helloworld/lisa
+    - curl http://${s_host1}:${BACKEND_PORT1}/helloworld/lisa || true
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
       when: always

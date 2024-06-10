@@ -33,15 +33,14 @@
 
 #### CI
 
+本项目使用Gitlab + Argo 作为自动化CID的部署:
+![img](img/ci.jpg)
+
 支持Gitlab, Github的CI, 内置ci脚本, 根据实际需求修改,
 CI的最佳实践有:
 
-1. 保护变量, 利用Gitlab平台提供的变量, 而不是在gitlab.ci.yml中硬编码
+1. 保护变量, 利用Gitlab平台提供的变量, 而不是在`gitlab.ci.yml`中硬编码
 2. 如果需要进入到远程基础设施(e.g Linux,Windows)时创建一个最小的权限用户, 给它分配合理的目录权限, 文件执行权限等
-
-#### CD
-
-本项目使用Gitlab + Argo 作为自动化的部署
 
 #### Observability
 

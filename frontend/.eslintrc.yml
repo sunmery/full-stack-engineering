@@ -39,6 +39,9 @@ plugins:
   - jsdoc
 rules:
   prettier/prettier: error
+  max-params:
+    - error
+    - 7
 
 settings:
   react:

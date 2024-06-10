@@ -9,18 +9,18 @@ server:
 # 数据库
 data:
   database:
-    host: 192.168.2.102
-    username: dbuser_dba
-    password: DBUser.DBA
-    dbname: meta
+    host: 159.75.231.54
+    username: root
+    password: msdnmm
+    dbname: postgres
     port: 5432
     ssl_mode: disable
     time_zone: Asia/Shanghai
 
   redis:
     user: default
-    pass: "msdnmm,."
-    addr: 192.168.2.192:6379
+    pass: "263393"
+    addr: 159.75.231.54:6379
     db: 0
     dial_timeout: 1s
     read_timeout: 0.2s
@@ -34,15 +34,14 @@ auth:
 
 # 服务注册&发现
 consul:
-  #  address: 192.168.2.181:8500
   address: 159.75.231.54:8500
-  Schema: Http
+  Schema: http
   health_check: false
 
-# 链路追踪
+# 可观测性
 jaeger:
   service_name: full-stack-engineering-backend-api
   grpc:
-    endpoint: 192.168.2.191:4317
+    endpoint: 159.75.231.54:4317
   http:
-    endpoint: 192.168.2.191:4318
+    endpoint: 159.75.231.54:4318

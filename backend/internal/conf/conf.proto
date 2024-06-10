@@ -56,18 +56,21 @@ message Data {
 // 身份验证/鉴权
 message Auth {
   string jwt_key = 1;
+  string service_key = 2;
+  string api_key = 3;
 }
 
+// 可观测性
 // 分布式链路追踪
 message Trace {
   message Jaeger {
-    string service_name = 1;
     message GRPC {
       string endpoint = 1;
     }
     message HTTP {
       string endpoint = 1;
     }
+    string service_name = 1;
     GRPC grpc = 2;
     HTTP http = 3;
   }

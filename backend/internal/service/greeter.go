@@ -1,15 +1,17 @@
 package service
 
 import (
-	v1 "backend/api/helloworld/v1"
-	"backend/internal/biz"
-	"backend/internal/helper/log"
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	v1 "backend/api/helloworld/v1"
+	"backend/internal/biz"
+	"backend/internal/helper/log"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"time"
 )
 
 // GreeterService is a greeter service.
@@ -53,16 +55,16 @@ func (s *GreeterService) SayHello(ctx context.Context, in *v1.HelloRequest) (*v1
 	return &v1.HelloReply{Message: "Hello " + g.Hello}, nil
 }
 
-func (s *GreeterService) Query(ctx context.Context, q *v1.QueryRequest) (*v1.QueryReply, error)  {
+func (s *GreeterService) Query(ctx context.Context, q *v1.QueryRequest) (*v1.QueryReply, error) {
 	// 链路追踪, 包含本函数的信息, 方便定位
 	tr := otel.Tracer("examples-hello-query")
 	spCtx, span := tr.Start(ctx, "query")
 	defer span.End()
 
-	fmt.Println("q.Name",q.Name)
+	fmt.Println("q.Name", q.Name)
 
 	// 传递ctx
-	result, err := s.uc.Query(spCtx,span, &biz.QueryRequest{
+	result, err := s.uc.Query(spCtx, span, &biz.QueryRequest{
 		Name: q.Name,
 	})
 	if err != nil {
@@ -70,11 +72,11 @@ func (s *GreeterService) Query(ctx context.Context, q *v1.QueryRequest) (*v1.Que
 	}
 
 	return &v1.QueryReply{
-		Data:    &v1.Data{
-			Username:   result.Data.Username,
-			Gender: v1.Data_Gender(result.Data.Gender),
+		Data: &v1.Data{
+			Username: result.Data.Username,
+			Gender:   v1.Data_Gender(result.Data.Gender),
 		},
-		Code: result.Code,
+		Code:    result.Code,
 		Message: result.Message,
-	},nil
+	}, nil
 }
