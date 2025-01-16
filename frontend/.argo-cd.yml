@@ -16,7 +16,7 @@ spec: # 规范部分
     # 指定 Git 仓库的 URL
     repoURL: http://192.168.2.158:7080/root/test.git
     # targetRevision：想要使用的 git 分支
-    targetRevision: HEAD
+    targetRevision: pre
   # Kubernetes 集群中的目标
   destination:
     namespace: microservice-shop2 # 指定目标命名空间
