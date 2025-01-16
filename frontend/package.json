@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "lint-staged": {
     "*.{ts,tsx,js,jsx,cjs,mjs,md}": "eslint --fix",
@@ -9,7 +9,7 @@
     "*.{ts,tsx,js,jsx,cjs,mjs}": "prettier --write"
   },
   "scripts": {
-    "prepare": "cd .. && husky frontend/.husky || true",
+    "prepare": "cd .. && husky frontend/.husky",
     "prettier:check": "prettier --check src/**/**{.cjs,.mjs,.ts,.tsx,.html,.md}",
     "prettier:write": "prettier --write src/**/**{.cjs,.mjs,.ts,.tsx,.html,.md}",
     "lint": "lint-staged",
@@ -22,7 +22,8 @@
     "build": "vite build",
     "preview": "vite preview --port 8080",
     "tauri": "tauri",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "release": "standard-version"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
@@ -66,6 +67,7 @@
     "lint-staged": "^15.2.4",
     "oxlint": "^0.2.18",
     "prettier": "3.2.5",
+    "standard-version": "^9.5.0",
     "stylelint": "^16.6.0",
     "stylelint-config-recess-order": "^5.0.1",
     "stylelint-config-standard": "^36.0.0",
